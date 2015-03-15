@@ -1,3 +1,5 @@
+use std;
+
 pub fn fixed_xor (bytes1: &[u8], bytes2: &[u8]) -> Vec<u8> {
     return bytes1.iter()
         .zip(bytes2.iter())
@@ -19,6 +21,15 @@ pub fn repeating_key_xor (plaintext: &[u8], key: &[u8]) -> Vec<u8> {
 
 pub fn hamming (bytes1: &[u8], bytes2: &[u8]) -> u64 {
     count_bits(&fixed_xor(bytes1, bytes2)[..])
+}
+
+pub fn pad_pkcs7 (block: &[u8], blocksize: u8) -> Vec<u8> {
+    let padding_bytes = blocksize - (block.len() % blocksize as usize) as u8;
+    return block
+        .iter()
+        .map(|c| *c)
+        .chain(std::iter::repeat(padding_bytes).take(padding_bytes as usize))
+        .collect();
 }
 
 fn count_bits (bytes: &[u8]) -> u64 {

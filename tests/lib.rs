@@ -111,3 +111,10 @@ fn problem_8 () {
     let got = matasano::find_aes_128_ecb_encrypted_string(&possibles[..]);
     assert_eq!(got, ciphertext);
 }
+
+#[test]
+fn problem_9 () {
+    let block = b"YELLOW SUBMARINE";
+    let got = matasano::pad_pkcs7(block, 20);
+    assert_eq!(got, b"YELLOW SUBMARINE\x04\x04\x04\x04");
+}
