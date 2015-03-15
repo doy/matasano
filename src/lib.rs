@@ -58,27 +58,27 @@ pub fn repeating_key_xor (plaintext: &[u8], key: &[u8]) -> Vec<u8> {
 }
 
 pub fn crack_single_byte_xor (input: &[u8]) -> Vec<u8> {
-    let (decrypted, _) = crack_single_byte_xor_with_confidence(input);
-    return decrypted;
+    let (key, _) = crack_single_byte_xor_with_confidence(input);
+    return repeating_key_xor(input, &[key]);
 }
 
 pub fn find_single_byte_xor_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
     let mut min_diff = 100.0;
     let mut best_decrypted = vec![];
     for input in inputs {
-        let (decrypted, diff) = crack_single_byte_xor_with_confidence(input);
+        let (key, diff) = crack_single_byte_xor_with_confidence(input);
         if diff < min_diff {
             min_diff = diff;
-            best_decrypted = decrypted;
+            best_decrypted = repeating_key_xor(input, &[key]);
         }
     }
     return best_decrypted;
 }
 
-fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (Vec<u8>, f64) {
+fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
-    let mut best_decrypted = vec![];
-    for a in 0..256 {
+    let mut best_key = 0;
+    for a in 0..256u16 {
         let decrypted = fixed_xor(
             input,
             &std::iter::repeat(a as u8)
@@ -106,9 +106,9 @@ fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (Vec<u8>, f64) {
 
         if total_diff < min_diff {
             min_diff = total_diff;
-            best_decrypted = decrypted;
+            best_key = a as u8;
         }
     }
 
-    return (best_decrypted, min_diff);
+    return (best_key, min_diff);
 }
