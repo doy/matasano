@@ -60,3 +60,18 @@ fn problem_6 () {
     let got = matasano::crack_repeating_key_xor(&ciphertext[..]);
     assert_eq!(got, plaintext);
 }
+
+#[test]
+fn problem_7 () {
+    let fh = File::open("data/7.txt").unwrap();
+    let ciphertext = std::io::BufStream::new(fh)
+        .lines()
+        .map(|line| line.unwrap().from_base64().unwrap())
+        .collect::<Vec<Vec<u8>>>()
+        .concat();
+    let key = b"YELLOW SUBMARINE";
+    let got = matasano::decrypt_aes_128_ecb(&ciphertext[..], key);
+    let outfh = File::open("data/7.out.txt").unwrap();
+    let plaintext = outfh.bytes().map(|c| c.unwrap()).collect();
+    assert_eq!(got, plaintext);
+}

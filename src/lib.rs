@@ -1,4 +1,5 @@
 extern crate "rustc-serialize" as serialize;
+extern crate openssl;
 
 use std::ascii::AsciiExt;
 use std::num::Float;
@@ -36,6 +37,15 @@ const ENGLISH_FREQUENCIES: [f64; 26] = [
 
 pub fn to_base64 (bytes: &[u8]) -> String {
     return bytes.to_base64(STANDARD);
+}
+
+pub fn decrypt_aes_128_ecb (bytes: &[u8], key: &[u8]) -> Vec<u8> {
+    return openssl::crypto::symm::decrypt(
+        openssl::crypto::symm::Type::AES_128_ECB,
+        key,
+        vec![],
+        bytes
+    )
 }
 
 pub fn fixed_xor (bytes1: &[u8], bytes2: &[u8]) -> Vec<u8> {
