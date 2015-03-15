@@ -45,6 +45,18 @@ pub fn fixed_xor (bytes1: &[u8], bytes2: &[u8]) -> Vec<u8> {
         .collect();
 }
 
+pub fn repeating_key_xor (plaintext: &[u8], key: &[u8]) -> Vec<u8> {
+    return fixed_xor(
+        plaintext,
+        &key
+            .iter()
+            .cycle()
+            .take(plaintext.len())
+            .map(|c| *c)
+            .collect::<Vec<u8>>()[..]
+    );
+}
+
 pub fn crack_single_byte_xor (input: &[u8]) -> Vec<u8> {
     let (decrypted, _) = crack_single_byte_xor_with_confidence(input);
     return decrypted;
