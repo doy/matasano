@@ -2,6 +2,7 @@ extern crate "rustc-serialize" as serialize;
 extern crate openssl;
 
 use std::ascii::AsciiExt;
+use std::collections::HashSet;
 use std::num::Float;
 
 use serialize::base64::{ToBase64,STANDARD};
@@ -83,6 +84,25 @@ pub fn find_single_byte_xor_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
         }
     }
     return best_decrypted;
+}
+
+pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
+    let mut max_dups = 0;
+    let mut found = vec![];
+    for input in inputs {
+        let mut set = HashSet::new();
+        let mut dups = 0;
+        for block in input.chunks(16) {
+            if !set.insert(block) {
+                dups += 1;
+            }
+        }
+        if dups > max_dups {
+            max_dups = dups;
+            found = input.clone();
+        }
+    }
+    return found;
 }
 
 pub fn crack_repeating_key_xor (input: &[u8]) -> Vec<u8> {
