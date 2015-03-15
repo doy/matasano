@@ -17,3 +17,10 @@ fn problem_2 () {
     let expected = "746865206b696420646f6e277420706c6179".from_hex().unwrap();
     assert_eq!(matasano::fixed_xor(&bytes1[..], &bytes2[..]), expected);
 }
+
+#[test]
+fn problem_3 () {
+    let encrypted = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736".from_hex().unwrap();
+    let plaintext = b"Cooking MC's like a pound of bacon";
+    assert_eq!(matasano::crack_single_byte_xor(&encrypted[..]), plaintext);
+}
