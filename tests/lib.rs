@@ -36,7 +36,7 @@ fn problem_4 () {
         .lines()
         .map(|line| line.unwrap().from_hex().unwrap())
         .collect::<Vec<Vec<u8>>>();
-    assert_eq!(matasano::find_single_byte_xor_encrypted_string(&possibles[..]), b"nOW\0THAT\0THE\0PARTY\0IS\0JUMPING*");
+    assert_eq!(matasano::find_single_byte_xor_encrypted_string(&possibles[..]), b"Now that the party is jumping\n");
 }
 
 #[test]

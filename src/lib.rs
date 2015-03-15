@@ -191,6 +191,9 @@ fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
         if !decrypted.is_ascii() {
             continue;
         }
+        if decrypted.iter().any(|&c| c != b'\n' && (c < 0x20 || c > 0x7E)) {
+            continue;
+        }
         let lowercase = decrypted.to_ascii_lowercase();
         let mut frequencies = [0; 26];
         let mut total_frequency = 0;
