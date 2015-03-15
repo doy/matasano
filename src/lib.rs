@@ -50,6 +50,19 @@ pub fn crack_single_byte_xor (input: &[u8]) -> Vec<u8> {
     return decrypted;
 }
 
+pub fn find_single_byte_xor_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
+    let mut min_diff = 100.0;
+    let mut best_decrypted = vec![];
+    for input in inputs {
+        let (decrypted, diff) = crack_single_byte_xor_with_confidence(input);
+        if diff < min_diff {
+            min_diff = diff;
+            best_decrypted = decrypted;
+        }
+    }
+    return best_decrypted;
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (Vec<u8>, f64) {
     let mut min_diff = 100.0;
     let mut best_decrypted = vec![];
@@ -61,9 +74,6 @@ fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (Vec<u8>, f64) {
                 .collect::<Vec<u8>>()[..]
         );
         if !decrypted.is_ascii() {
-            continue;
-        }
-        if decrypted.iter().any(|&c| { c < 0x20 || c > 0x7E }) {
             continue;
         }
         let lowercase = decrypted.to_ascii_lowercase();
