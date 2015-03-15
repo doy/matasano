@@ -75,6 +75,25 @@ pub fn find_single_byte_xor_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
     return best_decrypted;
 }
 
+fn hamming (bytes1: &[u8], bytes2: &[u8]) -> u64 {
+    count_bits(&fixed_xor(bytes1, bytes2)[..])
+}
+
+fn count_bits (bytes: &[u8]) -> u64 {
+    bytes.iter().map(|&c| { count_bits_byte(c) }).fold(0, |acc, n| acc + n)
+}
+
+fn count_bits_byte (byte: u8) -> u64 {
+    (((byte & (0x01 << 0)) >> 0)
+    + ((byte & (0x01 << 1)) >> 1)
+    + ((byte & (0x01 << 2)) >> 2)
+    + ((byte & (0x01 << 3)) >> 3)
+    + ((byte & (0x01 << 4)) >> 4)
+    + ((byte & (0x01 << 5)) >> 5)
+    + ((byte & (0x01 << 6)) >> 6)
+    + ((byte & (0x01 << 7)) >> 7)) as u64
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;
@@ -111,4 +130,9 @@ fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     }
 
     return (best_key, min_diff);
+}
+
+#[test]
+fn test_hamming () {
+    assert_eq!(hamming(b"this is a test", b"wokka wokka!!!"), 37);
 }
