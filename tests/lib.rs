@@ -4,6 +4,7 @@ extern crate "rustc-serialize" as serialize;
 use std::io::prelude::*;
 use std::fs::File;
 
+use serialize::base64::FromBase64;
 use serialize::hex::FromHex;
 
 #[test]
@@ -44,4 +45,18 @@ fn problem_5 () {
     let key = b"ICE";
     let ciphertext = "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f".from_hex().unwrap();
     assert_eq!(matasano::repeating_key_xor(plaintext, key), ciphertext);
+}
+
+#[test]
+fn problem_6 () {
+    let fh = File::open("data/6.txt").unwrap();
+    let ciphertext = std::io::BufStream::new(fh)
+        .lines()
+        .map(|line| line.unwrap().from_base64().unwrap())
+        .collect::<Vec<Vec<u8>>>()
+        .concat();
+    let outfh = File::open("data/6.out.txt").unwrap();
+    let plaintext = outfh.bytes().map(|c| c.unwrap()).collect();
+    let got = matasano::crack_repeating_key_xor(&ciphertext[..]);
+    assert_eq!(got, plaintext);
 }
