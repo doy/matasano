@@ -8,6 +8,7 @@ mod primitives;
 mod xor;
 
 pub use aes::decrypt_aes_128_ecb;
+pub use aes::decrypt_aes_128_cbc;
 pub use aes::find_aes_128_ecb_encrypted_string;
 pub use base64::to_base64;
 pub use primitives::fixed_xor;

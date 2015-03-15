@@ -118,3 +118,12 @@ fn problem_9 () {
     let got = matasano::pad_pkcs7(block, 20);
     assert_eq!(got, b"YELLOW SUBMARINE\x04\x04\x04\x04");
 }
+
+#[test]
+fn problem_10 () {
+    let ciphertext = read_as_base64("data/10.txt");
+    let key = b"YELLOW SUBMARINE";
+    let plaintext = read("data/10.out.txt");
+    let got = matasano::decrypt_aes_128_cbc(&ciphertext[..], key, &[0; 16]);
+    assert_eq!(got, plaintext);
+}
