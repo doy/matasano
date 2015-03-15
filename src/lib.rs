@@ -46,6 +46,11 @@ pub fn fixed_xor (bytes1: &[u8], bytes2: &[u8]) -> Vec<u8> {
 }
 
 pub fn crack_single_byte_xor (input: &[u8]) -> Vec<u8> {
+    let (decrypted, _) = crack_single_byte_xor_with_confidence(input);
+    return decrypted;
+}
+
+fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (Vec<u8>, f64) {
     let mut min_diff = 100.0;
     let mut best_decrypted = vec![];
     for a in 0..256 {
@@ -83,6 +88,5 @@ pub fn crack_single_byte_xor (input: &[u8]) -> Vec<u8> {
         }
     }
 
-    println!("{}", std::str::from_utf8(&best_decrypted[..]).unwrap());
-    return best_decrypted;
+    return (best_decrypted, min_diff);
 }
