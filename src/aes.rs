@@ -56,19 +56,24 @@ pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
     let mut max_dups = 0;
     let mut found = vec![];
     for input in inputs {
-        let mut set = HashSet::new();
-        let mut dups = 0;
-        for block in input.chunks(16) {
-            if !set.insert(block) {
-                dups += 1;
-            }
-        }
+        let dups = count_duplicate_blocks(input);
         if dups > max_dups {
             max_dups = dups;
             found = input.clone();
         }
     }
     return found;
+}
+
+fn count_duplicate_blocks (input: &[u8]) -> usize {
+    let mut set = HashSet::new();
+    let mut dups = 0;
+    for block in input.chunks(16) {
+        if !set.insert(block) {
+            dups += 1;
+        }
+    }
+    return dups;
 }
 
 #[test]
