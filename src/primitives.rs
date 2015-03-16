@@ -32,6 +32,11 @@ pub fn pad_pkcs7 (block: &[u8], blocksize: u8) -> Vec<u8> {
         .collect();
 }
 
+pub fn unpad_pkcs7 (block: &[u8]) -> &[u8] {
+    let padding_byte = block[block.len() - 1];
+    return &block[..(block.len() - padding_byte as usize)];
+}
+
 fn count_bits (bytes: &[u8]) -> u64 {
     bytes.iter().map(|&c| { count_bits_byte(c) }).fold(0, |acc, n| acc + n)
 }

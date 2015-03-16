@@ -1,7 +1,7 @@
 use openssl;
 use std::collections::HashSet;
 
-use primitives::fixed_xor;
+use primitives::{fixed_xor, pad_pkcs7, unpad_pkcs7};
 
 pub fn decrypt_aes_128_ecb (bytes: &[u8], key: &[u8]) -> Vec<u8> {
     return openssl::crypto::symm::decrypt(
@@ -16,25 +16,16 @@ pub fn decrypt_aes_128_cbc (bytes: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     let mut prev = iv.clone();
     let mut plaintext = vec![];
     for block in bytes.chunks(16) {
-        // XXX not sure what's going on here - decrypt_aes_128_ecb doesn't
-        // decrypt the last block?
-        let double_block: Vec<u8> = block
-            .iter()
-            .chain(block.iter()).map(|x| *x)
-            .collect();
         let plaintext_block = fixed_xor(
-            &decrypt_aes_128_ecb(&double_block[..], key)[..],
+            &decrypt_aes_128_ecb(&pad_pkcs7(block, 16)[..], key)[..],
             prev
         );
-        for &c in &plaintext_block[..16] {
+        for c in plaintext_block {
             plaintext.push(c);
         }
         prev = block.clone();
     }
-    let padding = plaintext[plaintext.len() - 1];
-    let new_len = plaintext.len() - padding as usize;
-    plaintext.truncate(new_len);
-    return plaintext;
+    return unpad_pkcs7(&plaintext[..]).to_vec();
 }
 
 pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
