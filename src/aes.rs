@@ -64,7 +64,7 @@ pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
     let mut max_dups = 0;
     let mut found = vec![];
     for input in inputs {
-        let dups = count_duplicate_blocks(input);
+        let dups = count_duplicate_blocks(input, 16);
         if dups > max_dups {
             max_dups = dups;
             found = input.clone();
@@ -73,15 +73,19 @@ pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
     return found;
 }
 
-pub fn detect_ecb_cbc<F> (f: F) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8> {
-    let plaintext: Vec<u8> = (0..16)
+pub fn detect_ecb_cbc<F> (f: F, block_size: usize) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8> {
+    if block_size >= std::u8::MAX as usize {
+        panic!("invalid block size: {}", block_size);
+    }
+    let block_size_byte = block_size as u8;
+    let plaintext: Vec<u8> = (0..block_size_byte)
         .cycle()
-        .take(32)
-        .flat_map(|n| std::iter::repeat(n).take(17))
+        .take(block_size * 2)
+        .flat_map(|n| std::iter::repeat(n).take(block_size + 1))
         .collect();
     let ciphertext = f(&plaintext[..]);
 
-    if count_duplicate_blocks(&ciphertext[..]) >= 16 {
+    if count_duplicate_blocks(&ciphertext[..], block_size) >= block_size {
         return BlockCipherMode::ECB;
     }
     else {
@@ -89,10 +93,10 @@ pub fn detect_ecb_cbc<F> (f: F) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8>
     }
 }
 
-fn count_duplicate_blocks (input: &[u8]) -> usize {
+fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
     let mut set = HashSet::new();
     let mut dups = 0;
-    for block in input.chunks(16) {
+    for block in input.chunks(block_size) {
         if !set.insert(block) {
             dups += 1;
         }

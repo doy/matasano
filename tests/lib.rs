@@ -180,7 +180,7 @@ fn problem_11 () {
     }
 
     for _ in 0..100 {
-        let got = matasano::detect_ecb_cbc(random_encrypter);
+        let got = matasano::detect_ecb_cbc(random_encrypter, 16);
         let expected = unsafe { &last_mode };
         assert_eq!(&got, expected);
     }
