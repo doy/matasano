@@ -1,7 +1,15 @@
-use openssl;
+use std;
 use std::collections::HashSet;
 
+use openssl;
+
 use primitives::{fixed_xor, pad_pkcs7, unpad_pkcs7};
+
+#[derive(PartialEq,Eq,Debug)]
+pub enum BlockCipherMode {
+    ECB,
+    CBC,
+}
 
 pub fn decrypt_aes_128_ecb (bytes: &[u8], key: &[u8]) -> Vec<u8> {
     return openssl::crypto::symm::decrypt(
@@ -63,6 +71,22 @@ pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
         }
     }
     return found;
+}
+
+pub fn detect_ecb_cbc<F> (f: F) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8> {
+    let plaintext: Vec<u8> = (0..16)
+        .cycle()
+        .take(32)
+        .flat_map(|n| std::iter::repeat(n).take(17))
+        .collect();
+    let ciphertext = f(&plaintext[..]);
+
+    if count_duplicate_blocks(&ciphertext[..]) >= 16 {
+        return BlockCipherMode::ECB;
+    }
+    else {
+        return BlockCipherMode::CBC;
+    }
 }
 
 fn count_duplicate_blocks (input: &[u8]) -> usize {

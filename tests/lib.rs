@@ -1,9 +1,11 @@
 extern crate matasano;
 extern crate "rustc-serialize" as serialize;
+extern crate rand;
 
 use std::io::prelude::*;
 use std::fs::File;
 
+use rand::{Rng, thread_rng};
 use serialize::base64::FromBase64;
 use serialize::hex::FromHex;
 
@@ -27,6 +29,16 @@ fn read_as_base64 (filename: &str) -> Vec<u8> {
 fn read (filename: &str) -> Vec<u8> {
     let outfh = File::open(filename).unwrap();
     return outfh.bytes().map(|c| c.unwrap()).collect();
+}
+
+fn random_aes_128_key () -> [u8; 16] {
+    let mut key = [0; 16];
+    thread_rng().fill_bytes(&mut key);
+    return key;
+}
+
+fn coinflip () -> bool {
+    thread_rng().gen()
 }
 
 #[test]
@@ -126,4 +138,50 @@ fn problem_10 () {
     let plaintext = read("data/10.out.txt");
     let got = matasano::decrypt_aes_128_cbc(&ciphertext[..], key, &[0; 16]);
     assert_eq!(got, plaintext);
+}
+
+#[test]
+fn problem_11 () {
+    static mut last_mode: matasano::BlockCipherMode = matasano::BlockCipherMode::ECB;
+
+    fn random_padding (input: &[u8]) -> Vec<u8> {
+        let front_padding: Vec<u8> = thread_rng()
+            .gen_iter()
+            .take(thread_rng().gen_range(5, 10))
+            .collect();
+        let back_padding: Vec<u8> = thread_rng()
+            .gen_iter()
+            .take(thread_rng().gen_range(5, 10))
+            .collect();
+        return front_padding
+            .iter()
+            .chain(input.iter())
+            .chain(back_padding.iter())
+            .map(|x| *x)
+            .collect()
+    }
+
+    fn random_encrypter (input: &[u8]) -> Vec<u8> {
+        let key = random_aes_128_key();
+        let padded_input = random_padding(input);
+        if coinflip() {
+            unsafe {
+                last_mode = matasano::BlockCipherMode::ECB;
+            }
+            return matasano::encrypt_aes_128_ecb(&padded_input[..], &key[..]);
+        }
+        else {
+            unsafe {
+                last_mode = matasano::BlockCipherMode::CBC;
+            }
+            let iv = random_aes_128_key();
+            return matasano::encrypt_aes_128_cbc(&padded_input[..], &key[..], &iv[..]);
+        }
+    }
+
+    for _ in 0..100 {
+        let got = matasano::detect_ecb_cbc(random_encrypter);
+        let expected = unsafe { &last_mode };
+        assert_eq!(&got, expected);
+    }
 }
