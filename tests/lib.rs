@@ -180,8 +180,33 @@ fn problem_11 () {
     }
 
     for _ in 0..100 {
-        let got = matasano::detect_ecb_cbc(random_encrypter, 16);
+        let got = matasano::detect_ecb_cbc(&random_encrypter, 16);
         let expected = unsafe { &last_mode };
         assert_eq!(&got, expected);
     }
+}
+
+#[test]
+fn problem_12 () {
+    let padding = b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWct\
+                    dG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpU\
+                    aGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\
+                    dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5v\
+                    LCBJIGp1c3QgZHJvdmUgYnkK".from_base64().unwrap();
+    let fixed_padding = |input: &[u8]| -> Vec<u8> {
+        return input
+            .iter()
+            .chain(padding.iter())
+            .map(|x| *x)
+            .collect()
+    };
+
+    let key = random_aes_128_key();
+    let random_encrypter = |input: &[u8]| {
+        let padded_input = fixed_padding(input);
+        return matasano::encrypt_aes_128_ecb(&padded_input[..], &key[..]);
+    };
+
+    let got = matasano::crack_padded_aes_128_ecb(&random_encrypter);
+    assert_eq!(got, padding);
 }

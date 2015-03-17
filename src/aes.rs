@@ -1,5 +1,5 @@
 use std;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use openssl;
 
@@ -73,7 +73,7 @@ pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
     return found;
 }
 
-pub fn detect_ecb_cbc<F> (f: F, block_size: usize) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8> {
+pub fn detect_ecb_cbc<F> (f: &F, block_size: usize) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8> {
     if block_size >= std::u8::MAX as usize {
         panic!("invalid block size: {}", block_size);
     }
@@ -93,6 +93,52 @@ pub fn detect_ecb_cbc<F> (f: F, block_size: usize) -> BlockCipherMode where F: F
     }
 }
 
+pub fn crack_padded_aes_128_ecb<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<u8> {
+    let block_size = find_block_size(f);
+    if detect_ecb_cbc(f, block_size) != BlockCipherMode::ECB {
+        panic!("Can only crack ECB-encrypted data");
+    }
+
+    let mut plaintext = vec![];
+
+    let get_block = |input: &[u8], i| {
+        let encrypted = f(input);
+        let block_number = i / block_size;
+        let low = block_number * block_size;
+        let high = (block_number + 1) * block_size;
+        encrypted[low..high].to_vec()
+    };
+
+    let mut i = 0;
+    loop {
+        let mut map = HashMap::new();
+
+        let prefix: Vec<u8> = std::iter::repeat(b'A')
+            .take(block_size - ((i % block_size) + 1))
+            .collect();
+        for c in 0..256 {
+            let mut prefix_with_next_char = prefix.clone();
+            for &c in plaintext.iter() {
+                prefix_with_next_char.push(c);
+            }
+            prefix_with_next_char.push(c as u8);
+            map.insert(get_block(&prefix_with_next_char[..], i), c as u8);
+        }
+
+        let next_char = map.get(&get_block(&prefix[..], i));
+        if next_char.is_some() {
+            plaintext.push(*next_char.unwrap());
+        }
+        else {
+            break;
+        }
+
+        i += 1;
+    }
+
+    return unpad_pkcs7(&plaintext[..]).to_vec();
+}
+
 fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
     let mut set = HashSet::new();
     let mut dups = 0;
@@ -102,6 +148,31 @@ fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
         }
     }
     return dups;
+}
+
+fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
+    let byte = b'A';
+    let mut prev = f(&[byte]);
+    let mut len = 2;
+    loop {
+        let prefix: Vec<u8> = std::iter::repeat(byte)
+            .take(len)
+            .collect();
+        let next = f(&prefix[..]);
+
+        let shared_prefix_len = prev
+            .iter()
+            .enumerate()
+            .take_while(|&(i, &c)| { c == next[i] })
+            .count();
+
+        if shared_prefix_len > 0 {
+            return shared_prefix_len;
+        }
+
+        prev = next;
+        len += 1;
+    }
 }
 
 #[test]

@@ -14,6 +14,7 @@ pub use aes::encrypt_aes_128_ecb;
 pub use aes::encrypt_aes_128_cbc;
 pub use aes::find_aes_128_ecb_encrypted_string;
 pub use aes::detect_ecb_cbc;
+pub use aes::crack_padded_aes_128_ecb;
 pub use base64::to_base64;
 pub use primitives::fixed_xor;
 pub use primitives::pad_pkcs7;
