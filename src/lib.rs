@@ -4,6 +4,7 @@ extern crate openssl;
 mod aes;
 mod base64;
 mod data;
+mod http;
 mod primitives;
 mod xor;
 
