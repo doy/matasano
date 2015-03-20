@@ -1,6 +1,6 @@
 use std;
+use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 use openssl;
 
@@ -141,6 +141,14 @@ pub fn crack_padded_aes_128_ecb<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<
 }
 
 pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>) where F: Fn(&str) -> Vec<u8> {
+    fn incr_map_element (map: &mut HashMap<Vec<u8>, usize>, key: Vec<u8>) {
+        if let Some(val) = map.get_mut(&key) {
+            *val += 1;
+            return;
+        }
+        map.insert(key, 1);
+    };
+
     // find blocks that correspond to "uid=10&role=user" or "role=user&uid=10"
     let find_uid_role_blocks = || {
         let mut map = HashMap::new();
@@ -148,14 +156,8 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>)
             let email_bytes: Vec<u8> = std::iter::repeat(c).take(9).collect();
             let email = std::str::from_utf8(&email_bytes[..]).unwrap();
             let ciphertext = encrypter(email);
-            match map.entry(ciphertext[..16].to_vec()) {
-                Occupied(mut o) => { *o.get_mut() += 1; },
-                Vacant(v) => { v.insert(1); },
-            }
-            match map.entry(ciphertext[16..32].to_vec()) {
-                Occupied(mut o) => { *o.get_mut() += 1; },
-                Vacant(v) => { v.insert(1); },
-            }
+            incr_map_element(&mut map, ciphertext[..16].to_vec());
+            incr_map_element(&mut map, ciphertext[16..32].to_vec());
         }
 
         let mut most_common_blocks = vec![];
@@ -180,7 +182,7 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>)
             }
         }
 
-        if let [(ref block1, i1), (ref block2, i2)] = &most_common_blocks[..] {
+        if let [(ref block1, _), (ref block2, _)] = &most_common_blocks[..] {
             return (block1.clone(), block2.clone());
         }
         else {
@@ -218,7 +220,7 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>)
                 possibles.push(modified_ciphertext);
             }
         }
-        return (String::from_str(email), possibles);
+        return (email.to_owned(), possibles);
     };
 
     let (block1, block2) = find_uid_role_blocks();

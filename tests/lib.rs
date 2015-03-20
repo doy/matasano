@@ -234,7 +234,7 @@ fn problem_13 () {
             return Some(
                 params
                 .into_iter()
-                .map(|(k, v)| (String::from_str(k), String::from_str(v)))
+                .map(|(k, v)| (k.to_owned(), v.to_owned()))
                 .collect()
             );
         }
@@ -245,9 +245,9 @@ fn problem_13 () {
 
     let (email, ciphertexts) = matasano::crack_querystring_aes_128_ecb(encrypter);
     let mut expected = HashMap::new();
-    expected.insert(String::from_str("email"), email);
-    expected.insert(String::from_str("uid"), String::from_str("10"));
-    expected.insert(String::from_str("role"), String::from_str("admin"));
+    expected.insert("email".to_owned(), email);
+    expected.insert("uid".to_owned(), "10".to_owned());
+    expected.insert("role".to_owned(), "admin".to_owned());
     assert!(ciphertexts.iter().any(|ciphertext| {
         decrypter(ciphertext).map(|params| params == expected).unwrap_or(false)
     }));
