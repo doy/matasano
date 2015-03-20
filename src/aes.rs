@@ -1,5 +1,6 @@
 use std;
 use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 use openssl;
 
@@ -137,6 +138,92 @@ pub fn crack_padded_aes_128_ecb<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<
     }
 
     return unpad_pkcs7(&plaintext[..]).to_vec();
+}
+
+pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>) where F: Fn(&str) -> Vec<u8> {
+    // find blocks that correspond to "uid=10&role=user" or "role=user&uid=10"
+    let find_uid_role_blocks = || {
+        let mut map = HashMap::new();
+        for c in 32..127 {
+            let email_bytes: Vec<u8> = std::iter::repeat(c).take(9).collect();
+            let email = std::str::from_utf8(&email_bytes[..]).unwrap();
+            let ciphertext = encrypter(email);
+            match map.entry(ciphertext[..16].to_vec()) {
+                Occupied(mut o) => { *o.get_mut() += 1; },
+                Vacant(v) => { v.insert(1); },
+            }
+            match map.entry(ciphertext[16..32].to_vec()) {
+                Occupied(mut o) => { *o.get_mut() += 1; },
+                Vacant(v) => { v.insert(1); },
+            }
+        }
+
+        let mut most_common_blocks = vec![];
+        for (k, v) in map {
+            most_common_blocks.push((k, v));
+            if most_common_blocks.len() > 2 {
+                let (idx, _) = most_common_blocks
+                    .iter()
+                    .enumerate()
+                    .fold(
+                        (0, (vec![], 10000)),
+                        |(aidx, (ablock, acount)), (idx, &(ref block, count))| {
+                            if count < acount {
+                                (idx, (block.clone(), count))
+                            }
+                            else {
+                                (aidx, (ablock.clone(), acount))
+                            }
+                        }
+                    );
+                most_common_blocks.swap_remove(idx);
+            }
+        }
+
+        if let [(ref block1, i1), (ref block2, i2)] = &most_common_blocks[..] {
+            return (block1.clone(), block2.clone());
+        }
+        else {
+            panic!("couldn't find most common blocks");
+        }
+    };
+
+    // encrypt:
+    // email=..........admin<pcks7 padding>...............&uid=10&role=user
+    let calculate_admin_block = |block1, block2| {
+        for _ in 0..1000 {
+            let email = "blorg@bar.admin\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b...............";
+            let ciphertext = encrypter(email);
+            if &ciphertext[48..64] == block1 || &ciphertext[48..64] == block2 {
+                return ciphertext[16..32].to_vec();
+            }
+        }
+        panic!("couldn't find a ciphertext with the correct role/uid block");
+    };
+
+    // find all possible encryptions with email=............ and then replace
+    // the last block with the padded admin block above
+    let calculate_possible_admin_ciphertexts = |admin_block: Vec<u8>| {
+        let email = "blorg@bar.com";
+        let mut possibles = vec![];
+        while possibles.len() < 6 {
+            let ciphertext = encrypter(email);
+            let modified_ciphertext = ciphertext
+                .iter()
+                .take(32)
+                .chain(admin_block.iter())
+                .map(|x| *x)
+                .collect();
+            if !possibles.iter().any(|possible| possible == &modified_ciphertext) {
+                possibles.push(modified_ciphertext);
+            }
+        }
+        return (String::from_str(email), possibles);
+    };
+
+    let (block1, block2) = find_uid_role_blocks();
+    let admin_block = calculate_admin_block(block1, block2);
+    return calculate_possible_admin_ciphertexts(admin_block);
 }
 
 fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {

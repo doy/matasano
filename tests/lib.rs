@@ -2,6 +2,8 @@ extern crate matasano;
 extern crate "rustc-serialize" as serialize;
 extern crate rand;
 
+use std::borrow::ToOwned;
+use std::collections::HashMap;
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -209,4 +211,44 @@ fn problem_12 () {
 
     let got = matasano::crack_padded_aes_128_ecb(&random_encrypter);
     assert_eq!(got, padding);
+}
+
+#[test]
+fn problem_13 () {
+    fn profile_for (email: &str) -> String {
+        let mut params = HashMap::new();
+        params.insert("email", email);
+        params.insert("uid", "10");
+        params.insert("role", "user");
+        return matasano::create_query_string(params);
+    }
+
+    let key = random_aes_128_key();
+    let encrypter = |email: &str| -> Vec<u8> {
+        matasano::encrypt_aes_128_ecb(profile_for(email).as_bytes(), &key[..])
+    };
+    let decrypter = |ciphertext: &[u8]| -> Option<HashMap<String, String>> {
+        let plaintext = matasano::decrypt_aes_128_ecb(ciphertext, &key[..]);
+        let plaintext_str = std::str::from_utf8(&plaintext[..]).unwrap();
+        if let Some(params) = matasano::parse_query_string(plaintext_str) {
+            return Some(
+                params
+                .into_iter()
+                .map(|(k, v)| (String::from_str(k), String::from_str(v)))
+                .collect()
+            );
+        }
+        else {
+            return None;
+        }
+    };
+
+    let (email, ciphertexts) = matasano::crack_querystring_aes_128_ecb(encrypter);
+    let mut expected = HashMap::new();
+    expected.insert(String::from_str("email"), email);
+    expected.insert(String::from_str("uid"), String::from_str("10"));
+    expected.insert(String::from_str("role"), String::from_str("admin"));
+    assert!(ciphertexts.iter().any(|ciphertext| {
+        decrypter(ciphertext).map(|params| params == expected).unwrap_or(false)
+    }));
 }
