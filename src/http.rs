@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-fn parse_query_string (string: &str) -> HashMap<&str, &str> {
+pub fn parse_query_string (string: &str) -> HashMap<&str, &str> {
     let mut map = HashMap::new();
     let mut offset = 0;
     let len = string.as_bytes().len();
