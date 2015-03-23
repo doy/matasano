@@ -69,7 +69,7 @@ fn problem_3 () {
                       28372d363c78373e783a393b3736".from_hex().unwrap();
     let plaintext = b"Cooking MC's like a pound of bacon";
     let got = matasano::crack_single_byte_xor(&ciphertext[..]);
-    assert_eq!(got, plaintext);
+    assert_eq!(got, &plaintext[..]);
 }
 
 #[test]

@@ -281,8 +281,8 @@ fn test_encrypt_decrypt () {
     let ciphertext2_ecb = encrypt_aes_128_ecb(&plaintext2_ecb[..], &key[..]);
     let ciphertext2_cbc = encrypt_aes_128_cbc(&plaintext2_cbc[..], &key[..], &iv[..]);
 
-    assert_eq!(plaintext, plaintext2_ecb);
-    assert_eq!(plaintext, plaintext2_cbc);
+    assert_eq!(&plaintext[..], plaintext2_ecb);
+    assert_eq!(&plaintext[..], plaintext2_cbc);
     assert_eq!(ciphertext_ecb, ciphertext2_ecb);
     assert_eq!(ciphertext_cbc, ciphertext2_cbc);
 }
