@@ -240,6 +240,7 @@ fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
 }
 
 fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
+    let fixed_prefix_len = find_fixed_prefix_len(f);
     let byte = b'A';
     let mut prev = f(&[byte]);
     let mut len = 2;
@@ -249,7 +250,10 @@ fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
             .collect();
         let next = f(&prefix[..]);
 
-        let prefix_len = shared_prefix_len(prev.iter(), next.iter());
+        let prefix_len = shared_prefix_len(
+            prev.iter().skip(fixed_prefix_len),
+            next.iter().skip(fixed_prefix_len)
+        );
         if prefix_len > 0 {
             return prefix_len;
         }
@@ -257,6 +261,12 @@ fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
         prev = next;
         len += 1;
     }
+}
+
+fn find_fixed_prefix_len<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
+    let ciphertext1 = f(b"");
+    let ciphertext2 = f(b"A");
+    return shared_prefix_len(ciphertext1.iter(), ciphertext2.iter());
 }
 
 fn shared_prefix_len<I> (i1: I, i2: I) -> usize where I: Iterator, <I as Iterator>::Item: PartialEq {
