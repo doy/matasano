@@ -249,19 +249,21 @@ fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
             .collect();
         let next = f(&prefix[..]);
 
-        let shared_prefix_len = prev
-            .iter()
-            .enumerate()
-            .take_while(|&(i, &c)| { c == next[i] })
-            .count();
-
-        if shared_prefix_len > 0 {
-            return shared_prefix_len;
+        let prefix_len = shared_prefix_len(prev.iter(), next.iter());
+        if prefix_len > 0 {
+            return prefix_len;
         }
 
         prev = next;
         len += 1;
     }
+}
+
+fn shared_prefix_len<I> (i1: I, i2: I) -> usize where I: Iterator, <I as Iterator>::Item: PartialEq {
+    return i1
+        .zip(i2)
+        .take_while(|&(ref c1, ref c2)| { c1 == c2 })
+        .count();
 }
 
 #[test]
