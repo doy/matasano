@@ -282,3 +282,23 @@ fn problem_14 () {
     let got = matasano::crack_padded_aes_128_ecb_with_prefix(&random_encrypter);
     assert_eq!(got, padding);
 }
+
+#[test]
+fn problem_15 () {
+    assert_eq!(
+        matasano::unpad_pkcs7(b"ICE ICE BABY\x04\x04\x04\x04"),
+        Some(&b"ICE ICE BABY"[..])
+    );
+    assert_eq!(
+        matasano::unpad_pkcs7(b"ICE ICE BABY\x05\x05\x05\x05"),
+        None
+    );
+    assert_eq!(
+        matasano::unpad_pkcs7(b"ICE ICE BABY\x01\x02\x03\x04"),
+        None
+    );
+    assert_eq!(
+        matasano::unpad_pkcs7(b"\x04\x04\x04\x04"),
+        Some(&b""[..])
+    );
+}

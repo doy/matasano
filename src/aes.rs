@@ -34,7 +34,7 @@ pub fn decrypt_aes_128_cbc (bytes: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
         }
         prev = block.clone();
     }
-    return unpad_pkcs7(&plaintext[..]).to_vec();
+    return unpad_pkcs7(&plaintext[..]).expect("invalid padding").to_vec();
 }
 
 pub fn encrypt_aes_128_ecb (bytes: &[u8], key: &[u8]) -> Vec<u8> {
@@ -137,7 +137,7 @@ pub fn crack_padded_aes_128_ecb<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<
         i += 1;
     }
 
-    return unpad_pkcs7(&plaintext[..]).to_vec();
+    return unpad_pkcs7(&plaintext[..]).expect("invalid padding").to_vec();
 }
 
 pub fn crack_padded_aes_128_ecb_with_prefix<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<u8> {

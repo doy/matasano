@@ -32,9 +32,20 @@ pub fn pad_pkcs7 (block: &[u8], blocksize: u8) -> Vec<u8> {
         .collect();
 }
 
-pub fn unpad_pkcs7 (block: &[u8]) -> &[u8] {
+pub fn unpad_pkcs7 (block: &[u8]) -> Option<&[u8]> {
     let padding_byte = block[block.len() - 1];
-    return &block[..(block.len() - padding_byte as usize)];
+    let padding_len = padding_byte as usize;
+    if padding_len > block.len() {
+        return None;
+    }
+
+    let real_len = block.len() - padding_len;
+    if block[real_len..].iter().all(|&c| c == padding_byte) {
+        return Some(&block[..real_len]);
+    }
+    else {
+        return None;
+    }
 }
 
 fn count_bits (bytes: &[u8]) -> u64 {

@@ -23,6 +23,7 @@ pub use http::parse_query_string;
 pub use http::create_query_string;
 pub use primitives::fixed_xor;
 pub use primitives::pad_pkcs7;
+pub use primitives::unpad_pkcs7;
 pub use primitives::repeating_key_xor;
 pub use xor::find_single_byte_xor_encrypted_string;
 pub use xor::crack_single_byte_xor;
