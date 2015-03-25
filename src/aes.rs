@@ -140,6 +140,23 @@ pub fn crack_padded_aes_128_ecb<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<
     return unpad_pkcs7(&plaintext[..]).to_vec();
 }
 
+pub fn crack_padded_aes_128_ecb_with_prefix<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<u8> {
+    let (block_size, prefix_len) = find_block_size_and_fixed_prefix_len(f);
+    let wrapped_f = |input: &[u8]| {
+        let alignment_padding = block_size - (prefix_len % block_size);
+        let padded_input: Vec<u8> = std::iter::repeat(b'A')
+            .take(alignment_padding)
+            .chain(input.iter().map(|x| *x))
+            .collect();
+        return f(&padded_input[..])
+            .iter()
+            .skip(prefix_len + alignment_padding)
+            .map(|x| *x)
+            .collect();
+    };
+    return crack_padded_aes_128_ecb(&wrapped_f);
+}
+
 pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>) where F: Fn(&str) -> Vec<u8> {
     fn incr_map_element (map: &mut HashMap<Vec<u8>, usize>, key: Vec<u8>) {
         if let Some(val) = map.get_mut(&key) {
@@ -240,10 +257,15 @@ fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
 }
 
 fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
-    let fixed_prefix_len = find_fixed_prefix_len(f);
+    let (block_size, _) = find_block_size_and_fixed_prefix_len(f);
+    return block_size;
+}
+
+fn find_block_size_and_fixed_prefix_len<F> (f: &F) -> (usize, usize) where F: Fn(&[u8]) -> Vec<u8> {
+    let fixed_prefix_len = find_fixed_block_prefix_len(f);
     let byte = b'A';
-    let mut prev = f(&[byte]);
-    let mut len = 2;
+    let mut prev = f(&[b'f']);
+    let mut len = 0;
     loop {
         let prefix: Vec<u8> = std::iter::repeat(byte)
             .take(len)
@@ -251,11 +273,12 @@ fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
         let next = f(&prefix[..]);
 
         let prefix_len = shared_prefix_len(
-            prev.iter().skip(fixed_prefix_len),
-            next.iter().skip(fixed_prefix_len)
+            prev.iter(),
+            next.iter()
         );
-        if prefix_len > 0 {
-            return prefix_len;
+        if prefix_len > fixed_prefix_len {
+            let block_size = prefix_len - fixed_prefix_len;
+            return (block_size, fixed_prefix_len + block_size - (len - 1));
         }
 
         prev = next;
@@ -263,7 +286,7 @@ fn find_block_size<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
     }
 }
 
-fn find_fixed_prefix_len<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
+fn find_fixed_block_prefix_len<F> (f: &F) -> usize where F: Fn(&[u8]) -> Vec<u8> {
     let ciphertext1 = f(b"");
     let ciphertext2 = f(b"A");
     return shared_prefix_len(ciphertext1.iter(), ciphertext2.iter());
