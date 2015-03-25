@@ -1,5 +1,5 @@
 extern crate matasano;
-extern crate "rustc-serialize" as serialize;
+extern crate rustc_serialize as serialize;
 extern crate rand;
 
 use std::borrow::ToOwned;
