@@ -157,7 +157,7 @@ pub fn crack_padded_aes_128_ecb_with_prefix<F> (f: &F) -> Vec<u8> where F: Fn(&[
     return crack_padded_aes_128_ecb(&wrapped_f);
 }
 
-pub fn crack_querystring_aes_128_ecb<F> (encrypter: F) -> (String, Vec<Vec<u8>>) where F: Fn(&str) -> Vec<u8> {
+pub fn crack_querystring_aes_128_ecb<F> (encrypter: &F) -> (String, Vec<Vec<u8>>) where F: Fn(&str) -> Vec<u8> {
     fn incr_map_element (map: &mut HashMap<Vec<u8>, usize>, key: Vec<u8>) {
         if let Some(val) = map.get_mut(&key) {
             *val += 1;

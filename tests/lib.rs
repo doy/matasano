@@ -243,7 +243,7 @@ fn problem_13 () {
         }
     };
 
-    let (email, ciphertexts) = matasano::crack_querystring_aes_128_ecb(encrypter);
+    let (email, ciphertexts) = matasano::crack_querystring_aes_128_ecb(&encrypter);
     let mut expected = HashMap::new();
     expected.insert("email".to_owned(), email);
     expected.insert("uid".to_owned(), "10".to_owned());
