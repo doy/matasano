@@ -302,3 +302,41 @@ fn problem_15 () {
         Some(&b""[..])
     );
 }
+
+#[test]
+fn problem_16 () {
+    let key = random_aes_128_key();
+    let iv = random_aes_128_key();
+    let prefix = "comment1=cooking%20MCs;userdata=";
+    let suffix = ";comment2=%20like%20a%20pound%20of%20bacon";
+    let admin = ";admin=true;";
+
+    let escape = |input: &str| {
+        input.replace("%", "%25").replace(";", "%3B").replace("=", "%3D")
+    };
+
+    let encode = |input: &str| -> Vec<u8> {
+        let plaintext: Vec<u8> = prefix
+            .as_bytes()
+            .iter()
+            .chain(escape(input).as_bytes().iter())
+            .chain(suffix.as_bytes().iter())
+            .map(|x| *x)
+            .collect();
+        return matasano::encrypt_aes_128_cbc(&plaintext[..], &key[..], &iv[..]);
+    };
+
+    let verify = |ciphertext: &[u8]| -> bool {
+        let plaintext = matasano::decrypt_aes_128_cbc(ciphertext, &key[..], &iv[..]);
+        return (0..(plaintext.len() - admin.len())).any(|i| {
+            plaintext
+                .iter()
+                .skip(i)
+                .zip(admin.as_bytes().iter())
+                .all(|(&c1, &c2)| c1 == c2)
+        });
+    };
+
+    let ciphertext = matasano::crack_cbc_bitflipping(&encode);
+    assert!(verify(&ciphertext[..]));
+}

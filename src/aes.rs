@@ -245,6 +245,14 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: &F) -> (String, Vec<Vec<u8>>
     return calculate_possible_admin_ciphertexts(admin_block);
 }
 
+pub fn crack_cbc_bitflipping<F> (f: &F) -> Vec<u8> where F: Fn(&str) -> Vec<u8> {
+    let mut ciphertext = f("AAAAAAAAAAAAAAAA:admin<true:AAAA");
+    ciphertext[32] = ciphertext[32] ^ 0x01;
+    ciphertext[38] = ciphertext[38] ^ 0x01;
+    ciphertext[43] = ciphertext[43] ^ 0x01;
+    return ciphertext;
+}
+
 fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
     let mut set = HashSet::new();
     let mut dups = 0;
