@@ -49,8 +49,8 @@ pub fn encrypt_aes_128_ecb (bytes: &[u8], key: &[u8]) -> Vec<u8> {
 pub fn encrypt_aes_128_cbc (bytes: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     let mut prev = iv.to_vec();
     let mut ciphertext = vec![];
-    for block in bytes.chunks(16) {
-        let plaintext_block = fixed_xor(&pad_pkcs7(block, 16)[..], &prev[..]);
+    for block in pad_pkcs7(bytes, 16).chunks(16) {
+        let plaintext_block = fixed_xor(&block[..], &prev[..]);
         let mut ciphertext_block = encrypt_aes_128_ecb(&plaintext_block[..], key);
         ciphertext_block.truncate(16);
         for &c in ciphertext_block.iter() {
