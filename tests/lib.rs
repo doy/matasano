@@ -107,7 +107,7 @@ fn problem_7 () {
     let key = b"YELLOW SUBMARINE";
     let plaintext = read("data/7.out.txt");
     let got = matasano::decrypt_aes_128_ecb(&ciphertext[..], key);
-    assert_eq!(got, plaintext);
+    assert_eq!(got, Some(plaintext));
 }
 
 #[test]
@@ -139,7 +139,7 @@ fn problem_10 () {
     let key = b"YELLOW SUBMARINE";
     let plaintext = read("data/10.out.txt");
     let got = matasano::decrypt_aes_128_cbc(&ciphertext[..], key, &[0; 16]);
-    assert_eq!(got, plaintext);
+    assert_eq!(got, Some(plaintext));
 }
 
 #[test]
@@ -228,7 +228,7 @@ fn problem_13 () {
         matasano::encrypt_aes_128_ecb(profile_for(email).as_bytes(), &key[..])
     };
     let decrypter = |ciphertext: &[u8]| -> Option<HashMap<String, String>> {
-        let plaintext = matasano::decrypt_aes_128_ecb(ciphertext, &key[..]);
+        let plaintext = matasano::decrypt_aes_128_ecb(ciphertext, &key[..]).unwrap();
         let plaintext_str = std::str::from_utf8(&plaintext[..]).unwrap();
         if let Some(params) = matasano::parse_query_string(plaintext_str) {
             return Some(
@@ -327,7 +327,7 @@ fn problem_16 () {
     };
 
     let verify = |ciphertext: &[u8]| -> bool {
-        let plaintext = matasano::decrypt_aes_128_cbc(ciphertext, &key[..], &iv[..]);
+        let plaintext = matasano::decrypt_aes_128_cbc(ciphertext, &key[..], &iv[..]).unwrap();
         return (0..(plaintext.len() - admin.len())).any(|i| {
             plaintext
                 .iter()
