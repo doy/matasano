@@ -298,6 +298,10 @@ fn problem_15 () {
         None
     );
     assert_eq!(
+        matasano::unpad_pkcs7(b"ICE ICE BABY\x00"),
+        None
+    );
+    assert_eq!(
         matasano::unpad_pkcs7(b"\x04\x04\x04\x04"),
         Some(&b""[..])
     );

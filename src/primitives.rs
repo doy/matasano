@@ -35,7 +35,7 @@ pub fn pad_pkcs7 (block: &[u8], blocksize: u8) -> Vec<u8> {
 pub fn unpad_pkcs7 (block: &[u8]) -> Option<&[u8]> {
     let padding_byte = block[block.len() - 1];
     let padding_len = padding_byte as usize;
-    if padding_len > block.len() {
+    if padding_len > block.len() || padding_len == 0 {
         return None;
     }
 
