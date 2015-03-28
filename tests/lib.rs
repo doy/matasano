@@ -392,3 +392,16 @@ fn problem_17 () {
         assert_eq!(&plaintext, expected);
     }
 }
+
+#[test]
+fn problem_18 () {
+    let ciphertext = b"L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syL\
+                       XzhPweyyMTJULu/6/kXX0KSvoOLSFQ==".from_base64().unwrap();
+    let plaintext = &b"Yo, VIP Let's kick it Ice, Ice, baby Ice, Ice, baby "[..];
+    let got = matasano::aes_128_ctr(
+        &ciphertext[..],
+        b"YELLOW SUBMARINE",
+        0
+    );
+    assert_eq!(got, plaintext);
+}

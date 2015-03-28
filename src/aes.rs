@@ -1,4 +1,5 @@
 use openssl;
+use std;
 
 use primitives::{fixed_xor, pad_pkcs7, unpad_pkcs7};
 
@@ -51,6 +52,35 @@ pub fn encrypt_aes_128_cbc (bytes: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
         prev = ciphertext_block.clone();
     }
     return ciphertext;
+}
+
+pub fn aes_128_ctr (bytes: &[u8], key: &[u8], nonce: u64) -> Vec<u8> {
+    let nonce_array: [u8; 8] = unsafe {
+        std::mem::transmute(nonce.to_le())
+    };
+    let mut counter = 0u64;
+    let mut ret = vec![];
+    for block in bytes.chunks(16) {
+        let counter_array: [u8; 8] = unsafe {
+            std::mem::transmute(counter.to_le())
+        };
+        let keystream = encrypt_aes_128_ecb(
+            &pad_pkcs7(
+                &nonce_array
+                    .iter()
+                    .chain(counter_array.iter())
+                    .map(|x| *x)
+                    .collect::<Vec<u8>>()[..],
+                16
+            )[..],
+            key
+        );
+        for c in fixed_xor(block, &keystream[..]) {
+            ret.push(c);
+        }
+        counter += 1;
+    }
+    return ret;
 }
 
 #[test]
