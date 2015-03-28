@@ -19,6 +19,7 @@ pub use aes::crack_padded_aes_128_ecb;
 pub use aes::crack_padded_aes_128_ecb_with_prefix;
 pub use aes::crack_querystring_aes_128_ecb;
 pub use aes::crack_cbc_bitflipping;
+pub use aes::crack_cbc_padding_oracle;
 pub use base64::to_base64;
 pub use http::parse_query_string;
 pub use http::create_query_string;

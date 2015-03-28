@@ -255,6 +255,39 @@ pub fn crack_cbc_bitflipping<F> (f: &F) -> Vec<u8> where F: Fn(&str) -> Vec<u8> 
     return ciphertext;
 }
 
+pub fn crack_cbc_padding_oracle<F> (iv: &[u8], ciphertext: &[u8], f: &F) -> Vec<u8> where F: Fn(&[u8], &[u8]) -> bool {
+    let mut prev = iv;
+    let mut plaintext = vec![];
+    for block in ciphertext.chunks(16) {
+        let mut plaintext_block = vec![];
+        'BYTE: for byte in 0..16u8 {
+            for c_int in 0..256 {
+                let c = (255 - c_int) as u8;
+                let offset = (16 - byte - 1) as usize;
+                let mut iv: Vec<u8> = prev
+                    .iter()
+                    .take(offset)
+                    .map(|x| *x)
+                    .collect();
+                iv.push(prev[offset] ^ c ^ (byte + 1));
+                for i in 0..(byte as usize) {
+                    iv.push(prev[offset + i + 1] ^ plaintext_block[i] ^ (byte + 1));
+                }
+                if f(&iv[..], block) {
+                    plaintext_block.insert(0, c);
+                    continue 'BYTE;
+                }
+            }
+            panic!("no byte found! ({})", byte);
+        }
+        for c in plaintext_block {
+            plaintext.push(c);
+        }
+        prev = block;
+    }
+    return unpad_pkcs7(&plaintext[..]).unwrap().to_vec();
+}
+
 fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
     let mut set = HashSet::new();
     let mut dups = 0;

@@ -344,3 +344,51 @@ fn problem_16 () {
     let ciphertext = matasano::crack_cbc_bitflipping(&encode);
     assert!(verify(&ciphertext[..]));
 }
+
+#[test]
+fn problem_17 () {
+    let strings = [
+        &b"MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc="[..],
+        &b"MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic="[..],
+        &b"MDAwMDAyUXVpY2sgdG8gdGhlIHBvaW50LCB0byB0aGUgcG9pbnQsIG5vIGZha2luZw=="[..],
+        &b"MDAwMDAzQ29va2luZyBNQydzIGxpa2UgYSBwb3VuZCBvZiBiYWNvbg=="[..],
+        &b"MDAwMDA0QnVybmluZyAnZW0sIGlmIHlvdSBhaW4ndCBxdWljayBhbmQgbmltYmxl"[..],
+        &b"MDAwMDA1SSBnbyBjcmF6eSB3aGVuIEkgaGVhciBhIGN5bWJhbA=="[..],
+        &b"MDAwMDA2QW5kIGEgaGlnaCBoYXQgd2l0aCBhIHNvdXBlZCB1cCB0ZW1wbw=="[..],
+        &b"MDAwMDA3SSdtIG9uIGEgcm9sbCwgaXQncyB0aW1lIHRvIGdvIHNvbG8="[..],
+        &b"MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g="[..],
+        &b"MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93"[..],
+    ];
+    let key = random_aes_128_key();
+
+    static mut chosen_plaintext: Option<&'static[u8]> = None;
+    let encrypter = || {
+        let plaintext = strings[thread_rng().gen_range(0, strings.len())];
+        unsafe { chosen_plaintext = Some(plaintext) };
+        let iv = random_aes_128_key();
+        return (
+            iv,
+            matasano::encrypt_aes_128_cbc(plaintext, &key[..], &iv[..])
+        );
+    };
+
+    let validator = |iv: &[u8], ciphertext: &[u8]| {
+        let plaintext = matasano::decrypt_aes_128_cbc(
+            ciphertext,
+            &key[..],
+            &iv[..]
+        );
+        return plaintext.is_some();
+    };
+
+    let (iv, ciphertext) = encrypter();
+    for _ in 0..5 {
+        let plaintext = matasano::crack_cbc_padding_oracle(
+            &iv[..],
+            &ciphertext[..],
+            &validator
+        );
+        let expected = unsafe { &chosen_plaintext.unwrap() };
+        assert_eq!(&plaintext, expected);
+    }
+}
