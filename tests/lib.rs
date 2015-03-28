@@ -361,14 +361,15 @@ fn problem_17 () {
     ];
     let key = random_aes_128_key();
 
-    static mut chosen_plaintext: Option<&'static[u8]> = None;
+    static mut chosen_plaintext_idx: usize = 0;
     let encrypter = || {
-        let plaintext = strings[thread_rng().gen_range(0, strings.len())];
-        unsafe { chosen_plaintext = Some(plaintext) };
+        let idx = thread_rng().gen_range(0, strings.len());
+        let plaintext = strings[idx].from_base64().unwrap();
+        unsafe { chosen_plaintext_idx = idx };
         let iv = random_aes_128_key();
         return (
             iv,
-            matasano::encrypt_aes_128_cbc(plaintext, &key[..], &iv[..])
+            matasano::encrypt_aes_128_cbc(&plaintext[..], &key[..], &iv[..])
         );
     };
 
@@ -388,8 +389,9 @@ fn problem_17 () {
             &ciphertext[..],
             &validator
         );
-        let expected = unsafe { &chosen_plaintext.unwrap() };
-        assert_eq!(&plaintext, expected);
+        let idx = unsafe { chosen_plaintext_idx.clone() };
+        let expected = strings[idx].from_base64().unwrap();
+        assert_eq!(plaintext, expected);
     }
 }
 
