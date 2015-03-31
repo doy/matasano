@@ -243,7 +243,9 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: &F) -> (String, Vec<Vec<u8>>
             }
         }
 
-        if let [(ref block1, _), (ref block2, _)] = &most_common_blocks[..] {
+        if most_common_blocks.len() == 2 {
+            let (ref block1, _) = most_common_blocks[0];
+            let (ref block2, _) = most_common_blocks[1];
             return (block1.clone(), block2.clone());
         }
         else {
