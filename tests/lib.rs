@@ -19,6 +19,14 @@ fn read_as_hex_lines (filename: &str) -> Vec<Vec<u8>> {
         .collect();
 }
 
+fn read_as_base64_lines (filename: &str) -> Vec<Vec<u8>> {
+    let fh = File::open(filename).unwrap();
+    return std::io::BufStream::new(fh)
+        .lines()
+        .map(|line| line.unwrap().from_base64().unwrap())
+        .collect();
+}
+
 fn read_as_base64 (filename: &str) -> Vec<u8> {
     let fh = File::open(filename).unwrap();
     return std::io::BufStream::new(fh)
@@ -407,3 +415,13 @@ fn problem_18 () {
     );
     assert_eq!(got, plaintext);
 }
+
+// #[test]
+// fn problem_19 () {
+//     let key = random_aes_128_key();
+//     let ciphertexts = read_as_base64_lines("data/19.txt")
+//         .iter()
+//         .map(|line| matasano::aes_128_ctr(&line[..], &key[..], 0))
+//         .collect();
+//     let plaintexts = matasano::crack_fixed_nonce_ctr_substitutions();
+// }
