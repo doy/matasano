@@ -105,7 +105,8 @@ fn problem_5 () {
 fn problem_6 () {
     let ciphertext = read_as_base64("data/6.txt");
     let plaintext = read("data/6.out.txt");
-    let got = matasano::crack_repeating_key_xor(&ciphertext[..]);
+    let key = matasano::crack_repeating_key_xor(&ciphertext[..]);
+    let got = matasano::repeating_key_xor(&ciphertext[..], &key[..]);
     assert_eq!(got, plaintext);
 }
 

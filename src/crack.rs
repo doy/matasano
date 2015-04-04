@@ -71,38 +71,14 @@ pub fn crack_repeating_key_xor (input: &[u8]) -> Vec<u8> {
     let mut min_diff = 100.0;
     let mut best_key = vec![];
     for (keysize, _) in keysizes {
-        let strides: Vec<Vec<u8>> = (0..keysize)
-            .map(|n| {
-                // XXX sigh ):
-                let mut elts = vec![];
-                for (i, &c) in input.iter().enumerate() {
-                    if i % keysize == n {
-                        elts.push(c);
-                    }
-                }
-                elts
-            })
-            .collect();
-        let cracked: Vec<(u8, f64)> = strides
-            .iter()
-            .map(|input| crack_single_byte_xor_with_confidence(input))
-            .collect();
-        let diff = cracked
-            .iter()
-            .map(|&(_, diff)| diff)
-            .fold(0.0, |acc, x| acc + x);
-        let key = cracked
-            .iter()
-            .map(|&(c, _)| c)
-            .collect();
-        let normal_diff = diff / (keysize as f64);
-        if normal_diff < min_diff {
-            min_diff = normal_diff;
+        let (key, diff) = crack_repeating_key_xor_with_keysize(input, keysize);
+        if diff < min_diff {
+            min_diff = diff;
             best_key = key;
         }
     }
 
-    return repeating_key_xor(input, &best_key[..]);
+    return best_key;
 }
 
 pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
@@ -376,6 +352,34 @@ fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     }
 
     return (best_key, min_diff);
+}
+
+fn crack_repeating_key_xor_with_keysize (input: &[u8], keysize: usize) -> (Vec<u8>, f64) {
+    let strides: Vec<Vec<u8>> = (0..keysize)
+        .map(|n| {
+            // XXX sigh ):
+            let mut elts = vec![];
+            for (i, &c) in input.iter().enumerate() {
+                if i % keysize == n {
+                    elts.push(c);
+                }
+            }
+            elts
+        })
+        .collect();
+    let cracked: Vec<(u8, f64)> = strides
+        .iter()
+        .map(|input| crack_single_byte_xor_with_confidence(input))
+        .collect();
+    let diff = cracked
+        .iter()
+        .map(|&(_, diff)| diff)
+        .fold(0.0, |acc, x| acc + x);
+    let key = cracked
+        .iter()
+        .map(|&(c, _)| c)
+        .collect();
+    return (key, diff / (keysize as f64));
 }
 
 fn count_duplicate_blocks (input: &[u8], block_size: usize) -> usize {
