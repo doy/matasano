@@ -308,6 +308,55 @@ pub fn crack_cbc_padding_oracle<F> (iv: &[u8], ciphertext: &[u8], f: &F) -> Vec<
     return unpad_pkcs7(&plaintext[..]).unwrap().to_vec();
 }
 
+pub fn crack_fixed_nonce_ctr_statistically (input: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
+    let min_len = input.iter().map(|line| line.len()).min().unwrap();
+    let max_len = input.iter().map(|line| line.len()).max().unwrap();
+
+    let mut plaintext_lines = vec![];
+    for _ in input.iter() {
+        plaintext_lines.push(vec![]);
+    }
+
+    let mut full_key = vec![];
+    for len in min_len..(max_len + 1) {
+        let mut idxs = vec![];
+        let ciphertext: Vec<u8> = input
+            .iter()
+            .enumerate()
+            .filter(|&(idx, line)| {
+                if line.len() >= len {
+                    idxs.push(idx);
+                    true
+                }
+                else {
+                    false
+                }
+            })
+            .flat_map(|(_, line)| line.iter().take(len))
+            .map(|x| *x)
+            .collect();
+
+        let (key, _) = crack_repeating_key_xor_with_keysize(
+            &ciphertext[..],
+            len
+        );
+        for i in full_key.len()..key.len() {
+            full_key.push(key[i])
+        }
+
+        for idx in idxs {
+            let line = repeating_key_xor(&input[idx][..], &full_key[..])
+                .iter()
+                .take(full_key.len())
+                .map(|x| *x)
+                .collect();
+            plaintext_lines[idx] = line;
+        }
+    }
+
+    return plaintext_lines;
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

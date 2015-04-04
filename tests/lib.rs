@@ -2,6 +2,7 @@ extern crate matasano;
 extern crate rustc_serialize as serialize;
 extern crate rand;
 
+use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::io::prelude::*;
@@ -24,6 +25,14 @@ fn read_as_base64_lines (filename: &str) -> Vec<Vec<u8>> {
     return std::io::BufStream::new(fh)
         .lines()
         .map(|line| line.unwrap().from_base64().unwrap())
+        .collect();
+}
+
+fn read_as_lines (filename: &str) -> Vec<Vec<u8>> {
+    let fh = File::open(filename).unwrap();
+    return std::io::BufStream::new(fh)
+        .lines()
+        .map(|line| line.unwrap().as_bytes().to_vec())
         .collect();
 }
 
@@ -426,3 +435,30 @@ fn problem_18 () {
 //         .collect();
 //     let plaintexts = matasano::crack_fixed_nonce_ctr_substitutions();
 // }
+
+#[test]
+fn problem_20 () {
+    fn normalize (line_list: Vec<Vec<u8>>, len: usize) -> Vec<Vec<u8>> {
+        line_list
+            .iter()
+            .map(|line| line.to_ascii_lowercase())
+            .map(|line| line.iter().take(len).map(|x| *x).collect())
+            .collect()
+    }
+
+    let key = random_aes_128_key();
+    let ciphertexts = read_as_base64_lines("data/20.txt")
+        .iter()
+        .map(|line| matasano::aes_128_ctr(&line[..], &key[..], 0))
+        .collect();
+    let expected = read_as_lines("data/20.out.txt");
+
+    let plaintexts = matasano::crack_fixed_nonce_ctr_statistically(
+        ciphertexts
+    );
+
+    assert_eq!(
+        normalize(plaintexts, 27),
+        normalize(expected, 27)
+    );
+}

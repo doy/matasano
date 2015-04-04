@@ -31,3 +31,4 @@ pub use crack::crack_cbc_padding_oracle;
 pub use crack::find_single_byte_xor_encrypted_string;
 pub use crack::crack_single_byte_xor;
 pub use crack::crack_repeating_key_xor;
+pub use crack::crack_fixed_nonce_ctr_statistically;
