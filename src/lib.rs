@@ -1,5 +1,6 @@
 extern crate rustc_serialize as serialize;
 extern crate openssl;
+extern crate rand;
 
 mod aes;
 mod base64;
@@ -7,6 +8,7 @@ mod crack;
 mod data;
 mod http;
 mod primitives;
+mod random;
 
 pub use aes::decrypt_aes_128_ecb;
 pub use aes::decrypt_aes_128_cbc;
@@ -20,6 +22,7 @@ pub use primitives::fixed_xor;
 pub use primitives::pad_pkcs7;
 pub use primitives::unpad_pkcs7;
 pub use primitives::repeating_key_xor;
+pub use random::MersenneTwister;
 pub use crack::BlockCipherMode;
 pub use crack::find_aes_128_ecb_encrypted_string;
 pub use crack::detect_ecb_cbc;

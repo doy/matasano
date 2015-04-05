@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::io::prelude::*;
 use std::fs::File;
 
-use rand::{Rng, thread_rng};
+use rand::{Rng, SeedableRng, thread_rng};
 use serialize::base64::FromBase64;
 use serialize::hex::FromHex;
 
@@ -461,4 +461,15 @@ fn problem_20 () {
         normalize(plaintexts, 27),
         normalize(expected, 27)
     );
+}
+
+#[test]
+fn problem_21 () {
+    let mut mt = matasano::MersenneTwister::from_seed(0x12345678);
+    let got: Vec<u32> = mt.gen_iter().take(10).collect();
+    let expected: Vec<u32> = vec![
+        0xC6979343, 0x0962D2FA, 0xA73A24A4, 0xE118A180, 0xB5475ABB,
+        0x64613C7C, 0x6F32F4DB, 0xF27BF199, 0x464DD8DC, 0x95C1FED6,
+    ];
+    assert_eq!(&got[..], &expected[..]);
 }
