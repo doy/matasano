@@ -2,7 +2,6 @@ use std;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
-use std::num::Float;
 
 use data::ENGLISH_FREQUENCIES;
 use primitives::{fixed_xor, unpad_pkcs7, hamming, repeating_key_xor};
@@ -231,11 +230,11 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: &F) -> (String, Vec<Vec<u8>>
 
     // encrypt:
     // email=..........admin<pcks7 padding>...............&uid=10&role=user
-    let calculate_admin_block = |block1, block2| {
+    let calculate_admin_block = |block1: Vec<u8>, block2: Vec<u8>| {
         for _ in 0..1000 {
             let email = "blorg@bar.admin\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b...............";
             let ciphertext = encrypter(email);
-            if &ciphertext[48..64] == block1 || &ciphertext[48..64] == block2 {
+            if &ciphertext[48..64] == &block1[..] || &ciphertext[48..64] == &block2[..] {
                 return ciphertext[16..32].to_vec();
             }
         }
