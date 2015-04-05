@@ -1,4 +1,5 @@
 use rand::{Rand, Rng, SeedableRng};
+use std;
 
 pub struct MersenneTwister {
     state: [u32; 624],
@@ -63,5 +64,15 @@ impl Rand for MersenneTwister {
 impl Clone for MersenneTwister {
     fn clone (&self) -> MersenneTwister {
         MersenneTwister { state: self.state, index: self.index }
+    }
+}
+
+impl std::fmt::Debug for MersenneTwister {
+    fn fmt (&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        try!(write!(f, "MersenneTwister {{ "));
+        try!(std::fmt::Debug::fmt(&&self.state[..], f));
+        try!(write!(f, ", "));
+        try!(std::fmt::Debug::fmt(&self.index, f));
+        write!(f, " }}")
     }
 }
