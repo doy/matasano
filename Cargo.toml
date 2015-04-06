@@ -4,8 +4,16 @@ version = "0.0.1"
 authors = ["Jesse Luehrs <doy@tozt.net>"]
 
 [[test]]
-name = "all"
-path = "tests/lib.rs"
+name = "set1"
+path = "tests/set1.rs"
+
+[[test]]
+name = "set2"
+path = "tests/set2.rs"
+
+[[test]]
+name = "set3"
+path = "tests/set3.rs"
 
 [dependencies]
 rustc-serialize = "0.3"

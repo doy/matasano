@@ -1,9 +1,14 @@
+#![allow(dead_code)]
+
+extern crate rand;
+extern crate rustc_serialize as serialize;
+
 use std::io::prelude::*;
 use std::fs::File;
 
-use rand::Rng;
-use serialize::base64::FromBase64;
-use serialize::hex::FromHex;
+use self::rand::Rng;
+use self::serialize::base64::FromBase64;
+use self::serialize::hex::FromHex;
 
 pub fn read_as_hex_lines (filename: &str) -> Vec<Vec<u8>> {
     let fh = File::open(filename).unwrap();
@@ -45,10 +50,10 @@ pub fn read (filename: &str) -> Vec<u8> {
 
 pub fn random_aes_128_key () -> [u8; 16] {
     let mut key = [0; 16];
-    ::rand::thread_rng().fill_bytes(&mut key);
+    self::rand::thread_rng().fill_bytes(&mut key);
     return key;
 }
 
 pub fn coinflip () -> bool {
-    ::rand::thread_rng().gen()
+    self::rand::thread_rng().gen()
 }
