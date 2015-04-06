@@ -55,6 +55,22 @@ impl SeedableRng<u32> for MersenneTwister {
     }
 }
 
+impl SeedableRng<([u32; 624], usize)> for MersenneTwister {
+    fn reseed (&mut self, seed: ([u32; 624], usize)) {
+        let (state, index) = seed;
+        for i in 0..624 {
+            self.state[i] = state[i];
+        }
+        self.index = index;
+    }
+
+    fn from_seed (seed: ([u32; 624], usize)) -> MersenneTwister {
+        let mut mt = MersenneTwister::new_unseeded();
+        mt.reseed(seed);
+        mt
+    }
+}
+
 impl Rand for MersenneTwister {
     fn rand<R: Rng> (other: &mut R) -> MersenneTwister {
         MersenneTwister::from_seed(other.next_u32())
