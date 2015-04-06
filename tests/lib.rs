@@ -6,60 +6,12 @@ extern crate time;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::collections::HashMap;
-use std::io::prelude::*;
-use std::fs::File;
 
 use rand::{Rng, SeedableRng};
 use serialize::base64::FromBase64;
 use serialize::hex::FromHex;
 
-fn read_as_hex_lines (filename: &str) -> Vec<Vec<u8>> {
-    let fh = File::open(filename).unwrap();
-    return std::io::BufStream::new(fh)
-        .lines()
-        .map(|line| line.unwrap().from_hex().unwrap())
-        .collect();
-}
-
-fn read_as_base64_lines (filename: &str) -> Vec<Vec<u8>> {
-    let fh = File::open(filename).unwrap();
-    return std::io::BufStream::new(fh)
-        .lines()
-        .map(|line| line.unwrap().from_base64().unwrap())
-        .collect();
-}
-
-fn read_as_lines (filename: &str) -> Vec<Vec<u8>> {
-    let fh = File::open(filename).unwrap();
-    return std::io::BufStream::new(fh)
-        .lines()
-        .map(|line| line.unwrap().as_bytes().to_vec())
-        .collect();
-}
-
-fn read_as_base64 (filename: &str) -> Vec<u8> {
-    let fh = File::open(filename).unwrap();
-    return std::io::BufStream::new(fh)
-        .lines()
-        .map(|line| line.unwrap().from_base64().unwrap())
-        .collect::<Vec<Vec<u8>>>()
-        .concat();
-}
-
-fn read (filename: &str) -> Vec<u8> {
-    let outfh = File::open(filename).unwrap();
-    return outfh.bytes().map(|c| c.unwrap()).collect();
-}
-
-fn random_aes_128_key () -> [u8; 16] {
-    let mut key = [0; 16];
-    rand::thread_rng().fill_bytes(&mut key);
-    return key;
-}
-
-fn coinflip () -> bool {
-    rand::thread_rng().gen()
-}
+mod util;
 
 #[test]
 fn problem_1 () {
@@ -92,7 +44,7 @@ fn problem_3 () {
 
 #[test]
 fn problem_4 () {
-    let possibles = read_as_hex_lines("data/4.txt");
+    let possibles = util::read_as_hex_lines("data/4.txt");
     let plaintext = b"Now that the party is jumping\n";
     let got = matasano::find_single_byte_xor_encrypted_string(&possibles[..]);
     assert_eq!(got, plaintext);
@@ -113,8 +65,8 @@ fn problem_5 () {
 
 #[test]
 fn problem_6 () {
-    let ciphertext = read_as_base64("data/6.txt");
-    let plaintext = read("data/6.out.txt");
+    let ciphertext = util::read_as_base64("data/6.txt");
+    let plaintext = util::read("data/6.out.txt");
     let key = matasano::crack_repeating_key_xor(&ciphertext[..]);
     let got = matasano::repeating_key_xor(&ciphertext[..], &key[..]);
     assert_eq!(got, plaintext);
@@ -122,16 +74,16 @@ fn problem_6 () {
 
 #[test]
 fn problem_7 () {
-    let ciphertext = read_as_base64("data/7.txt");
+    let ciphertext = util::read_as_base64("data/7.txt");
     let key = b"YELLOW SUBMARINE";
-    let plaintext = read("data/7.out.txt");
+    let plaintext = util::read("data/7.out.txt");
     let got = matasano::decrypt_aes_128_ecb(&ciphertext[..], key);
     assert_eq!(got, Some(plaintext));
 }
 
 #[test]
 fn problem_8 () {
-    let possibles = read_as_hex_lines("data/8.txt");
+    let possibles = util::read_as_hex_lines("data/8.txt");
     let ciphertext = "d880619740a8a19b7840a8a31c810a3d08649af7\
                       0dc06f4fd5d2d69c744cd283e2dd052f6b641dbf\
                       9d11b0348542bb5708649af70dc06f4fd5d2d69c\
@@ -154,9 +106,9 @@ fn problem_9 () {
 
 #[test]
 fn problem_10 () {
-    let ciphertext = read_as_base64("data/10.txt");
+    let ciphertext = util::read_as_base64("data/10.txt");
     let key = b"YELLOW SUBMARINE";
-    let plaintext = read("data/10.out.txt");
+    let plaintext = util::read("data/10.out.txt");
     let got = matasano::decrypt_aes_128_cbc(&ciphertext[..], key, &[0; 16]);
     assert_eq!(got, Some(plaintext));
 }
@@ -183,9 +135,9 @@ fn problem_11 () {
     }
 
     fn random_encrypter (input: &[u8]) -> Vec<u8> {
-        let key = random_aes_128_key();
+        let key = util::random_aes_128_key();
         let padded_input = random_padding(input);
-        if coinflip() {
+        if util::coinflip() {
             unsafe {
                 last_mode = matasano::BlockCipherMode::ECB;
             }
@@ -195,7 +147,7 @@ fn problem_11 () {
             unsafe {
                 last_mode = matasano::BlockCipherMode::CBC;
             }
-            let iv = random_aes_128_key();
+            let iv = util::random_aes_128_key();
             return matasano::encrypt_aes_128_cbc(&padded_input[..], &key[..], &iv[..]);
         }
     }
@@ -222,7 +174,7 @@ fn problem_12 () {
             .collect()
     };
 
-    let key = random_aes_128_key();
+    let key = util::random_aes_128_key();
     let random_encrypter = |input: &[u8]| {
         let padded_input = fixed_padding(input);
         return matasano::encrypt_aes_128_ecb(&padded_input[..], &key[..]);
@@ -242,7 +194,7 @@ fn problem_13 () {
         return matasano::create_query_string(params);
     }
 
-    let key = random_aes_128_key();
+    let key = util::random_aes_128_key();
     let encrypter = |email: &str| -> Vec<u8> {
         matasano::encrypt_aes_128_ecb(profile_for(email).as_bytes(), &key[..])
     };
@@ -292,7 +244,7 @@ fn problem_14 () {
             .collect()
     };
 
-    let key = random_aes_128_key();
+    let key = util::random_aes_128_key();
     let random_encrypter = |input: &[u8]| {
         let padded_input = fixed_padding(input);
         return matasano::encrypt_aes_128_ecb(&padded_input[..], &key[..]);
@@ -328,8 +280,8 @@ fn problem_15 () {
 
 #[test]
 fn problem_16 () {
-    let key = random_aes_128_key();
-    let iv = random_aes_128_key();
+    let key = util::random_aes_128_key();
+    let iv = util::random_aes_128_key();
     let prefix = "comment1=cooking%20MCs;userdata=";
     let suffix = ";comment2=%20like%20a%20pound%20of%20bacon";
     let admin = ";admin=true;";
@@ -378,14 +330,14 @@ fn problem_17 () {
         &b"MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g="[..],
         &b"MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93"[..],
     ];
-    let key = random_aes_128_key();
+    let key = util::random_aes_128_key();
 
     static mut chosen_plaintext_idx: usize = 0;
     let encrypter = || {
         let idx = rand::thread_rng().gen_range(0, strings.len());
         let plaintext = strings[idx].from_base64().unwrap();
         unsafe { chosen_plaintext_idx = idx };
-        let iv = random_aes_128_key();
+        let iv = util::random_aes_128_key();
         return (
             iv,
             matasano::encrypt_aes_128_cbc(&plaintext[..], &key[..], &iv[..])
@@ -429,8 +381,8 @@ fn problem_18 () {
 
 // #[test]
 // fn problem_19 () {
-//     let key = random_aes_128_key();
-//     let ciphertexts = read_as_base64_lines("data/19.txt")
+//     let key = util::random_aes_128_key();
+//     let ciphertexts = util::read_as_base64_lines("data/19.txt")
 //         .iter()
 //         .map(|line| matasano::aes_128_ctr(&line[..], &key[..], 0))
 //         .collect();
@@ -447,12 +399,12 @@ fn problem_20 () {
             .collect()
     }
 
-    let key = random_aes_128_key();
-    let ciphertexts = read_as_base64_lines("data/20.txt")
+    let key = util::random_aes_128_key();
+    let ciphertexts = util::read_as_base64_lines("data/20.txt")
         .iter()
         .map(|line| matasano::aes_128_ctr(&line[..], &key[..], 0))
         .collect();
-    let expected = read_as_lines("data/20.out.txt");
+    let expected = util::read_as_lines("data/20.out.txt");
 
     let plaintexts = matasano::crack_fixed_nonce_ctr_statistically(
         ciphertexts
