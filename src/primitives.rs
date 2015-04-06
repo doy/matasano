@@ -1,5 +1,3 @@
-use std;
-
 pub fn fixed_xor (bytes1: &[u8], bytes2: &[u8]) -> Vec<u8> {
     return bytes1.iter()
         .zip(bytes2.iter())
@@ -28,7 +26,7 @@ pub fn pad_pkcs7 (block: &[u8], blocksize: u8) -> Vec<u8> {
     return block
         .iter()
         .map(|c| *c)
-        .chain(std::iter::repeat(padding_bytes).take(padding_bytes as usize))
+        .chain(::std::iter::repeat(padding_bytes).take(padding_bytes as usize))
         .collect();
 }
 

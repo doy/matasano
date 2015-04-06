@@ -1,4 +1,3 @@
-use std;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
@@ -96,14 +95,14 @@ pub fn find_aes_128_ecb_encrypted_string (inputs: &[Vec<u8>]) -> Vec<u8> {
 }
 
 pub fn detect_ecb_cbc<F> (f: &F, block_size: usize) -> BlockCipherMode where F: Fn(&[u8]) -> Vec<u8> {
-    if block_size >= std::u8::MAX as usize {
+    if block_size >= ::std::u8::MAX as usize {
         panic!("invalid block size: {}", block_size);
     }
     let block_size_byte = block_size as u8;
     let plaintext: Vec<u8> = (0..block_size_byte)
         .cycle()
         .take(block_size * 2)
-        .flat_map(|n| std::iter::repeat(n).take(block_size + 1))
+        .flat_map(|n| ::std::iter::repeat(n).take(block_size + 1))
         .collect();
     let ciphertext = f(&plaintext[..]);
 
@@ -135,7 +134,7 @@ pub fn crack_padded_aes_128_ecb<F> (f: &F) -> Vec<u8> where F: Fn(&[u8]) -> Vec<
     loop {
         let mut map = HashMap::new();
 
-        let prefix: Vec<u8> = std::iter::repeat(b'A')
+        let prefix: Vec<u8> = ::std::iter::repeat(b'A')
             .take(block_size - ((i % block_size) + 1))
             .collect();
         for c in 0..256 {
@@ -165,7 +164,7 @@ pub fn crack_padded_aes_128_ecb_with_prefix<F> (f: &F) -> Vec<u8> where F: Fn(&[
     let (block_size, prefix_len) = find_block_size_and_fixed_prefix_len(f);
     let wrapped_f = |input: &[u8]| {
         let alignment_padding = block_size - (prefix_len % block_size);
-        let padded_input: Vec<u8> = std::iter::repeat(b'A')
+        let padded_input: Vec<u8> = ::std::iter::repeat(b'A')
             .take(alignment_padding)
             .chain(input.iter().map(|x| *x))
             .collect();
@@ -191,8 +190,8 @@ pub fn crack_querystring_aes_128_ecb<F> (encrypter: &F) -> (String, Vec<Vec<u8>>
     let find_uid_role_blocks = || {
         let mut map = HashMap::new();
         for c in 32..127 {
-            let email_bytes: Vec<u8> = std::iter::repeat(c).take(9).collect();
-            let email = std::str::from_utf8(&email_bytes[..]).unwrap();
+            let email_bytes: Vec<u8> = ::std::iter::repeat(c).take(9).collect();
+            let email = ::std::str::from_utf8(&email_bytes[..]).unwrap();
             let ciphertext = encrypter(email);
             incr_map_element(&mut map, ciphertext[..16].to_vec());
             incr_map_element(&mut map, ciphertext[16..32].to_vec());
@@ -393,7 +392,7 @@ fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     for a in 0..256u16 {
         let decrypted = fixed_xor(
             input,
-            &std::iter::repeat(a as u8)
+            &::std::iter::repeat(a as u8)
                 .take(input.len())
                 .collect::<Vec<u8>>()[..]
         );
@@ -483,7 +482,7 @@ fn find_block_size_and_fixed_prefix_len<F> (f: &F) -> (usize, usize) where F: Fn
     let mut prev = f(&[b'f']);
     let mut len = 0;
     loop {
-        let prefix: Vec<u8> = std::iter::repeat(byte)
+        let prefix: Vec<u8> = ::std::iter::repeat(byte)
             .take(len)
             .collect();
         let next = f(&prefix[..]);

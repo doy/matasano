@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::io::prelude::*;
 use std::fs::File;
 
-use rand::{Rng, SeedableRng, thread_rng};
+use rand::{Rng, SeedableRng};
 use serialize::base64::FromBase64;
 use serialize::hex::FromHex;
 
@@ -52,12 +52,12 @@ fn read (filename: &str) -> Vec<u8> {
 
 fn random_aes_128_key () -> [u8; 16] {
     let mut key = [0; 16];
-    thread_rng().fill_bytes(&mut key);
+    rand::thread_rng().fill_bytes(&mut key);
     return key;
 }
 
 fn coinflip () -> bool {
-    thread_rng().gen()
+    rand::thread_rng().gen()
 }
 
 #[test]
@@ -165,13 +165,13 @@ fn problem_11 () {
     static mut last_mode: matasano::BlockCipherMode = matasano::BlockCipherMode::ECB;
 
     fn random_padding (input: &[u8]) -> Vec<u8> {
-        let front_padding: Vec<u8> = thread_rng()
+        let front_padding: Vec<u8> = rand::thread_rng()
             .gen_iter()
-            .take(thread_rng().gen_range(5, 10))
+            .take(rand::thread_rng().gen_range(5, 10))
             .collect();
-        let back_padding: Vec<u8> = thread_rng()
+        let back_padding: Vec<u8> = rand::thread_rng()
             .gen_iter()
-            .take(thread_rng().gen_range(5, 10))
+            .take(rand::thread_rng().gen_range(5, 10))
             .collect();
         return front_padding
             .iter()
@@ -278,9 +278,9 @@ fn problem_14 () {
                     aGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\
                     dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5v\
                     LCBJIGp1c3QgZHJvdmUgYnkK".from_base64().unwrap();
-    let front_padding: Vec<u8> = thread_rng()
+    let front_padding: Vec<u8> = rand::thread_rng()
         .gen_iter()
-        .take(thread_rng().gen_range(1, 100))
+        .take(rand::thread_rng().gen_range(1, 100))
         .collect();
     let fixed_padding = |input: &[u8]| -> Vec<u8> {
         return front_padding
@@ -381,7 +381,7 @@ fn problem_17 () {
 
     static mut chosen_plaintext_idx: usize = 0;
     let encrypter = || {
-        let idx = thread_rng().gen_range(0, strings.len());
+        let idx = rand::thread_rng().gen_range(0, strings.len());
         let plaintext = strings[idx].from_base64().unwrap();
         unsafe { chosen_plaintext_idx = idx };
         let iv = random_aes_128_key();
@@ -476,7 +476,7 @@ fn problem_21 () {
 
 #[test]
 fn problem_22 () {
-    let mut mt: matasano::MersenneTwister = thread_rng().gen();
+    let mut mt: matasano::MersenneTwister = rand::thread_rng().gen();
     let outputs: Vec<u32> = mt.gen_iter().take(624).collect();
     let mut mt2 = matasano::clone_mersenne_twister_from_output(&outputs[..]);
     for _ in 1..1000 {
