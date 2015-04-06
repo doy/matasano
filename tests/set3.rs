@@ -1,7 +1,6 @@
 extern crate matasano;
 extern crate rustc_serialize as serialize;
 extern crate rand;
-extern crate time;
 
 use std::ascii::AsciiExt;
 
@@ -124,7 +123,7 @@ fn problem_21 () {
 #[test]
 fn problem_22 () {
     // std::thread::sleep_ms(rand::thread_rng().gen_range(40, 1000) * 1000);
-    let seed = time::now().to_timespec().sec as u32;
+    let seed = util::now();
     let mut mt = matasano::MersenneTwister::from_seed(seed);
     // std::thread::sleep_ms(rand::thread_rng().gen_range(40, 1000) * 1000);
     let output: u32 = mt.gen();
@@ -161,7 +160,7 @@ fn problem_24 () {
 
 #[test]
 fn problem_24_part_2 () {
-    let seed = time::now().to_timespec().sec as u32;
+    let seed = util::now();
     let mut mt = matasano::MersenneTwister::from_seed(seed);
     let token: Vec<u8> = mt.gen_iter().take(16).collect();
     let got = matasano::recover_mt19937_key_from_time(&token[..]).unwrap();

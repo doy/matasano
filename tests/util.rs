@@ -2,6 +2,7 @@
 
 extern crate rand;
 extern crate rustc_serialize as serialize;
+extern crate time;
 
 use std::io::prelude::*;
 use std::fs::File;
@@ -56,4 +57,8 @@ pub fn random_aes_128_key () -> [u8; 16] {
 
 pub fn coinflip () -> bool {
     self::rand::thread_rng().gen()
+}
+
+pub fn now () -> u32 {
+    return self::time::now().to_timespec().sec as u32;
 }
