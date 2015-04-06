@@ -414,6 +414,19 @@ pub fn recover_16_bit_mt19937_key (ciphertext: &[u8], suffix: &[u8]) -> Option<u
     return None;
 }
 
+pub fn recover_mt19937_key_from_time (token: &[u8]) -> Option<u32> {
+    let now = ::time::now().to_timespec().sec as u32;
+    for i in -500..500i32 {
+        let seed = (now as i32).wrapping_add(i) as u32;
+        let mut mt = MersenneTwister::from_seed(seed);
+        let test_token: Vec<u8> = mt.gen_iter().take(16).collect();
+        if &test_token[..] == token {
+            return Some(seed);
+        }
+    }
+    return None;
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

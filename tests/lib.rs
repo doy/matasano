@@ -512,3 +512,12 @@ fn problem_24 () {
     ).unwrap();
     assert_eq!(got, key);
 }
+
+#[test]
+fn problem_24_part_2 () {
+    let seed = time::now().to_timespec().sec as u32;
+    let mut mt = matasano::MersenneTwister::from_seed(seed);
+    let token: Vec<u8> = mt.gen_iter().take(16).collect();
+    let got = matasano::recover_mt19937_key_from_time(&token[..]).unwrap();
+    assert_eq!(got, seed);
+}
