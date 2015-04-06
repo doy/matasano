@@ -1,7 +1,7 @@
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 
 use data::ENGLISH_FREQUENCIES;
 use primitives::{fixed_xor, unpad_pkcs7, hamming, repeating_key_xor};
@@ -355,6 +355,19 @@ pub fn crack_fixed_nonce_ctr_statistically (input: Vec<Vec<u8>>) -> Vec<Vec<u8>>
     }
 
     return plaintext_lines;
+}
+
+pub fn recover_mersenne_twister_seed_from_time (output: u32) -> Option<u32> {
+    let now = ::time::now().to_timespec().sec as u32;
+    for i in -10000..10000i32 {
+        let seed = (now as i32).wrapping_add(i) as u32;
+        let mut mt = MersenneTwister::from_seed(seed);
+        let test_output: u32 = mt.gen();
+        if test_output == output {
+            return Some(seed);
+        }
+    }
+    return None;
 }
 
 pub fn clone_mersenne_twister_from_output (outputs: &[u32]) -> MersenneTwister {

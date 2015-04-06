@@ -1,6 +1,7 @@
 extern crate rustc_serialize as serialize;
 extern crate openssl;
 extern crate rand;
+extern crate time;
 
 mod aes;
 mod base64;
@@ -36,5 +37,6 @@ pub use crack::find_single_byte_xor_encrypted_string;
 pub use crack::crack_single_byte_xor;
 pub use crack::crack_repeating_key_xor;
 pub use crack::crack_fixed_nonce_ctr_statistically;
+pub use crack::recover_mersenne_twister_seed_from_time;
 pub use crack::clone_mersenne_twister_from_output;
 pub use crack::recover_16_bit_mt19937_key;

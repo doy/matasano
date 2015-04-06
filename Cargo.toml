@@ -8,3 +8,4 @@ authors = ["Jesse Luehrs <doy@tozt.net>"]
 rustc-serialize = "0.3"
 openssl = "0.5"
 rand = "0.3"
+time = "0.1"
