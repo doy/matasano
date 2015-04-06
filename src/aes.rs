@@ -52,10 +52,14 @@ pub fn encrypt_aes_128_cbc (bytes: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
 }
 
 pub fn aes_128_ctr (bytes: &[u8], key: &[u8], nonce: u64) -> Vec<u8> {
+    aes_128_ctr_with_counter(bytes, key, nonce, 0)
+}
+
+pub fn aes_128_ctr_with_counter (bytes: &[u8], key: &[u8], nonce: u64, counter_start: u64) -> Vec<u8> {
     let nonce_array: [u8; 8] = unsafe {
         ::std::mem::transmute(nonce.to_le())
     };
-    let mut counter = 0u64;
+    let mut counter = counter_start;
     let mut ret = vec![];
     for block in bytes.chunks(16) {
         let counter_array: [u8; 8] = unsafe {

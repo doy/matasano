@@ -16,6 +16,7 @@ pub use aes::decrypt_aes_128_cbc;
 pub use aes::encrypt_aes_128_ecb;
 pub use aes::encrypt_aes_128_cbc;
 pub use aes::aes_128_ctr;
+pub use aes::aes_128_ctr_with_counter;
 pub use base64::to_base64;
 pub use http::parse_query_string;
 pub use http::create_query_string;
