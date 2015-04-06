@@ -35,3 +35,4 @@ pub use crack::find_single_byte_xor_encrypted_string;
 pub use crack::crack_single_byte_xor;
 pub use crack::crack_repeating_key_xor;
 pub use crack::crack_fixed_nonce_ctr_statistically;
+pub use crack::clone_mersenne_twister_from_output;

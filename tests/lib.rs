@@ -473,3 +473,13 @@ fn problem_21 () {
     ];
     assert_eq!(&got[..], &expected[..]);
 }
+
+#[test]
+fn problem_22 () {
+    let mut mt: matasano::MersenneTwister = thread_rng().gen();
+    let outputs: Vec<u32> = mt.gen_iter().take(624).collect();
+    let mut mt2 = matasano::clone_mersenne_twister_from_output(&outputs[..]);
+    for _ in 1..1000 {
+        assert_eq!(mt.gen::<u32>(), mt2.gen::<u32>());
+    }
+}

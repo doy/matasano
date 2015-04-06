@@ -2,9 +2,11 @@ use std;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
+use rand::SeedableRng;
 
 use data::ENGLISH_FREQUENCIES;
 use primitives::{fixed_xor, unpad_pkcs7, hamming, repeating_key_xor};
+use random::MersenneTwister;
 
 #[derive(PartialEq,Eq,Debug)]
 pub enum BlockCipherMode {
@@ -354,6 +356,35 @@ pub fn crack_fixed_nonce_ctr_statistically (input: Vec<Vec<u8>>) -> Vec<Vec<u8>>
     }
 
     return plaintext_lines;
+}
+
+pub fn clone_mersenne_twister_from_output (outputs: &[u32]) -> MersenneTwister {
+    fn untemper (val: u32) -> u32 {
+        fn unxorshift<F> (f: F, mut y: u32, n: usize, mask: u32) -> u32 where F: Fn(u32, usize) -> u32 {
+            let mut a = y;
+            for _ in 0..(32 / n) {
+                y = f(y, n) & mask;
+                a = a ^ y;
+            }
+            return a;
+        }
+
+        let mut y = val;
+
+        y = unxorshift(|a, n| {a >> n}, y, 18, 0xffffffff);
+        y = unxorshift(|a, n| {a << n}, y, 15, 0xefc60000);
+        y = unxorshift(|a, n| {a << n}, y,  7, 0x9d2c5680);
+        y = unxorshift(|a, n| {a >> n}, y, 11, 0xffffffff);
+
+        y
+    }
+
+    let mut state = [0; 624];
+    for (i, &output) in outputs.iter().enumerate() {
+        state[i] = untemper(output);
+    }
+
+    return MersenneTwister::from_seed((state, 0));
 }
 
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
