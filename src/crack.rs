@@ -386,6 +386,21 @@ pub fn clone_mersenne_twister_from_output (outputs: &[u32]) -> MersenneTwister {
     return MersenneTwister::from_seed((state, 0));
 }
 
+pub fn recover_16_bit_mt19937_key (ciphertext: &[u8], suffix: &[u8]) -> Option<u16> {
+    for _key in 0..65536u32 {
+        let key = _key as u16;
+        let plaintext = ::random::mt19937_stream_cipher(
+            ciphertext,
+            key as u32
+        );
+        if &plaintext[(ciphertext.len() - suffix.len())..] == suffix {
+            return Some(key);
+        }
+    }
+
+    return None;
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

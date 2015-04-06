@@ -37,3 +37,4 @@ pub use crack::crack_single_byte_xor;
 pub use crack::crack_repeating_key_xor;
 pub use crack::crack_fixed_nonce_ctr_statistically;
 pub use crack::clone_mersenne_twister_from_output;
+pub use crack::recover_16_bit_mt19937_key;

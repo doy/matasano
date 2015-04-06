@@ -483,3 +483,20 @@ fn problem_22 () {
         assert_eq!(mt.gen::<u32>(), mt2.gen::<u32>());
     }
 }
+
+#[test]
+fn problem_23 () {
+    let key: u16 = rand::thread_rng().gen();
+    let fixed_suffix = b"AAAAAAAAAAAAAA";
+    let plaintext: Vec<u8> = rand::thread_rng()
+        .gen_iter()
+        .take(rand::thread_rng().gen_range(0, 32))
+        .chain(fixed_suffix.iter().map(|x| *x))
+        .collect();
+    let ciphertext = matasano::mt19937_stream_cipher(&plaintext[..], key as u32);
+    let got = matasano::recover_16_bit_mt19937_key(
+        &ciphertext[..],
+        &fixed_suffix[..],
+    ).unwrap();
+    assert_eq!(got, key);
+}
