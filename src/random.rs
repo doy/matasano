@@ -92,3 +92,21 @@ impl std::fmt::Debug for MersenneTwister {
         write!(f, " }}")
     }
 }
+
+pub fn mt19937_stream_cipher (ciphertext: &[u8], key: u32) -> Vec<u8> {
+    let mut mt = MersenneTwister::from_seed(key);
+    let keystream: Vec<u8> = mt.gen_iter().take(ciphertext.len()).collect();
+    return ::primitives::fixed_xor(ciphertext, &keystream[..]);
+}
+
+#[test]
+fn test_mt19937_stream_cipher () {
+    let key = ::rand::thread_rng().gen();
+    let plaintext = b"Summertime and the wind is blowing outside in lower \
+                     Chelsea and I don't know what I'm doing in the city, the \
+                     sun is always in my eyes";
+    let ciphertext = mt19937_stream_cipher(&plaintext[..], key);
+    assert!(&plaintext[..] != &ciphertext[..]);
+    let plaintext2 = mt19937_stream_cipher(&ciphertext[..], key);
+    assert_eq!(&plaintext[..], &plaintext2[..]);
+}

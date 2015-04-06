@@ -23,6 +23,7 @@ pub use primitives::pad_pkcs7;
 pub use primitives::unpad_pkcs7;
 pub use primitives::repeating_key_xor;
 pub use random::MersenneTwister;
+pub use random::mt19937_stream_cipher;
 pub use crack::BlockCipherMode;
 pub use crack::find_aes_128_ecb_encrypted_string;
 pub use crack::detect_ecb_cbc;
