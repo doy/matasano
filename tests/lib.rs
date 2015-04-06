@@ -475,7 +475,7 @@ fn problem_21 () {
 }
 
 #[test]
-fn problem_22 () {
+fn problem_23 () {
     let mut mt: matasano::MersenneTwister = rand::thread_rng().gen();
     let outputs: Vec<u32> = mt.gen_iter().take(624).collect();
     let mut mt2 = matasano::clone_mersenne_twister_from_output(&outputs[..]);
@@ -485,7 +485,7 @@ fn problem_22 () {
 }
 
 #[test]
-fn problem_23 () {
+fn problem_24 () {
     let key: u16 = rand::thread_rng().gen();
     let fixed_suffix = b"AAAAAAAAAAAAAA";
     let plaintext: Vec<u8> = rand::thread_rng()
