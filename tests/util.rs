@@ -49,6 +49,11 @@ pub fn read (filename: &str) -> Vec<u8> {
     return outfh.bytes().map(|c| c.unwrap()).collect();
 }
 
+pub fn write (filename: &str, data: &[u8]) {
+    let mut outfh = File::create(filename).unwrap();
+    outfh.write(data).unwrap();
+}
+
 pub fn random_aes_128_key () -> [u8; 16] {
     let mut key = [0; 16];
     self::rand::thread_rng().fill_bytes(&mut key);
