@@ -15,6 +15,10 @@ path = "tests/set2.rs"
 name = "set3"
 path = "tests/set3.rs"
 
+[[test]]
+name = "set4"
+path = "tests/set4.rs"
+
 [dependencies]
 rustc-serialize = "0.3"
 openssl = "0.5"

@@ -427,6 +427,14 @@ pub fn recover_mt19937_key_from_time (token: &[u8]) -> Option<u32> {
     return None;
 }
 
+pub fn crack_aes_128_ctr_random_access<F> (ciphertext: &[u8], edit: F) -> Vec<u8> where F: Fn(&[u8], usize, &[u8]) -> Vec<u8> {
+    let empty_plaintext: Vec<u8> = ::std::iter::repeat(b'\x00')
+        .take(ciphertext.len())
+        .collect();
+    let keystream = edit(ciphertext, 0, &empty_plaintext[..]);
+    return fixed_xor(&keystream[..], ciphertext);
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;
