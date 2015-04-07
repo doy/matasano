@@ -48,3 +48,41 @@ fn problem_25 () {
     let got = matasano::crack_aes_128_ctr_random_access(&ciphertext[..], edit);
     assert_eq!(&got[..], &plaintext[..]);
 }
+
+#[test]
+fn problem_26 () {
+    let key = util::random_aes_128_key();
+    let nonce = rand::thread_rng().gen();
+    let prefix = "comment1=cooking%20MCs;userdata=";
+    let suffix = ";comment2=%20like%20a%20pound%20of%20bacon";
+    let admin = ";admin=true;";
+
+    let escape = |input: &str| {
+        input.replace("%", "%25").replace(";", "%3B").replace("=", "%3D")
+    };
+
+    let encode = |input: &str| -> Vec<u8> {
+        let plaintext: Vec<u8> = prefix
+            .as_bytes()
+            .iter()
+            .chain(escape(input).as_bytes().iter())
+            .chain(suffix.as_bytes().iter())
+            .map(|x| *x)
+            .collect();
+        return matasano::aes_128_ctr(&plaintext[..], &key[..], nonce);
+    };
+
+    let verify = |ciphertext: &[u8]| -> bool {
+        let plaintext = matasano::aes_128_ctr(ciphertext, &key[..], nonce);
+        return (0..(plaintext.len() - admin.len())).any(|i| {
+            plaintext
+                .iter()
+                .skip(i)
+                .zip(admin.as_bytes().iter())
+                .all(|(&c1, &c2)| c1 == c2)
+        });
+    };
+
+    let ciphertext = matasano::crack_ctr_bitflipping(&encode);
+    assert!(verify(&ciphertext[..]));
+}

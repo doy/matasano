@@ -435,6 +435,18 @@ pub fn crack_aes_128_ctr_random_access<F> (ciphertext: &[u8], edit: F) -> Vec<u8
     return fixed_xor(&keystream[..], ciphertext);
 }
 
+pub fn crack_ctr_bitflipping<F> (f: &F) -> Vec<u8> where F: Fn(&str) -> Vec<u8> {
+    let ciphertext = f("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00");
+    let replacement = fixed_xor(&ciphertext[32..44], b";admin=true;");
+    return ciphertext[..32]
+        .iter()
+        .chain(replacement.iter())
+        .chain(ciphertext[44..].iter())
+        .map(|x| *x)
+        .collect();
+}
+
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

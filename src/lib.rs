@@ -43,3 +43,4 @@ pub use crack::clone_mersenne_twister_from_output;
 pub use crack::recover_16_bit_mt19937_key;
 pub use crack::recover_mt19937_key_from_time;
 pub use crack::crack_aes_128_ctr_random_access;
+pub use crack::crack_ctr_bitflipping;
