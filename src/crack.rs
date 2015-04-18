@@ -3,6 +3,7 @@ use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
 use rand::{Rng, SeedableRng};
 
+use aes::encrypt_aes_128_cbc;
 use data::ENGLISH_FREQUENCIES;
 use primitives::{fixed_xor, unpad_pkcs7, hamming, repeating_key_xor};
 use random::MersenneTwister;
@@ -446,6 +447,32 @@ pub fn crack_ctr_bitflipping<F> (f: &F) -> Vec<u8> where F: Fn(&str) -> Vec<u8> 
         .collect();
 }
 
+pub fn crack_cbc_iv_key<F1, F2> (encrypt: &F1, verify: &F2) -> Vec<u8> where F1: Fn(&str) -> Vec<u8>, F2: Fn(&[u8]) -> Result<bool, Vec<u8>> {
+    loop {
+        let plaintext_bytes: Vec<u8> = ::rand::thread_rng()
+            .gen_iter()
+            .filter(|&c| c >= 32 && c < 127)
+            .take(16*5)
+            .collect();
+        let plaintext = ::std::str::from_utf8(&plaintext_bytes).unwrap();
+        let ciphertext = encrypt(plaintext);
+        let modified_ciphertext: Vec<u8> = ciphertext[..16]
+            .iter()
+            .map(|x| *x)
+            .chain(::std::iter::repeat(0).take(16))
+            .chain(ciphertext[..16].iter().map(|x| *x))
+            .chain(ciphertext[48..].iter().map(|x| *x))
+            .collect();
+        if let Err(modified_plaintext) = verify(&modified_ciphertext[..]) {
+            let key = fixed_xor(
+                &modified_plaintext[..16],
+                &modified_plaintext[32..48]
+            );
+            let desired_plaintext = b"comment1=cooking%20MCs;userdata=;admin=true;comment2=%20like%20a%20pound%20of%20bacon";
+            return encrypt_aes_128_cbc(desired_plaintext, &key[..], &key[..]);
+        }
+    }
+}
 
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
