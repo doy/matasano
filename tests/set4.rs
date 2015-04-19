@@ -116,7 +116,6 @@ fn problem_27 () {
             return Err(plaintext);
         }
         else {
-            println!("{}", ::std::str::from_utf8(&plaintext[..]).unwrap());
             return Ok(
                 (0..(plaintext.len() - admin.len())).any(|i| {
                     plaintext
