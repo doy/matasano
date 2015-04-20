@@ -131,3 +131,5 @@ fn problem_27 () {
     let ciphertext = matasano::crack_cbc_iv_key(&encode, &verify);
     assert!(verify(&ciphertext[..]).unwrap());
 }
+
+// problem 28 is just matasano::sha1_mac

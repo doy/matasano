@@ -10,6 +10,7 @@ mod data;
 mod http;
 mod primitives;
 mod random;
+mod sha1;
 
 pub use aes::decrypt_aes_128_ecb;
 pub use aes::decrypt_aes_128_cbc;
@@ -26,6 +27,8 @@ pub use primitives::unpad_pkcs7;
 pub use primitives::repeating_key_xor;
 pub use random::MersenneTwister;
 pub use random::mt19937_stream_cipher;
+pub use sha1::sha1;
+pub use sha1::sha1_mac;
 pub use crack::BlockCipherMode;
 pub use crack::find_aes_128_ecb_encrypted_string;
 pub use crack::detect_ecb_cbc;
