@@ -21,6 +21,6 @@ path = "tests/set4.rs"
 
 [dependencies]
 rustc-serialize = "0.3"
-openssl = "0.5"
+openssl = "0.6"
 rand = "0.3"
 time = "0.1"

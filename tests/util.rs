@@ -13,7 +13,7 @@ use self::serialize::hex::FromHex;
 
 pub fn read_as_hex_lines (filename: &str) -> Vec<Vec<u8>> {
     let fh = File::open(filename).unwrap();
-    return ::std::io::BufStream::new(fh)
+    return ::std::io::BufReader::new(fh)
         .lines()
         .map(|line| line.unwrap().from_hex().unwrap())
         .collect();
@@ -21,7 +21,7 @@ pub fn read_as_hex_lines (filename: &str) -> Vec<Vec<u8>> {
 
 pub fn read_as_base64_lines (filename: &str) -> Vec<Vec<u8>> {
     let fh = File::open(filename).unwrap();
-    return ::std::io::BufStream::new(fh)
+    return ::std::io::BufReader::new(fh)
         .lines()
         .map(|line| line.unwrap().from_base64().unwrap())
         .collect();
@@ -29,7 +29,7 @@ pub fn read_as_base64_lines (filename: &str) -> Vec<Vec<u8>> {
 
 pub fn read_as_lines (filename: &str) -> Vec<Vec<u8>> {
     let fh = File::open(filename).unwrap();
-    return ::std::io::BufStream::new(fh)
+    return ::std::io::BufReader::new(fh)
         .lines()
         .map(|line| line.unwrap().as_bytes().to_vec())
         .collect();
@@ -37,7 +37,7 @@ pub fn read_as_lines (filename: &str) -> Vec<Vec<u8>> {
 
 pub fn read_as_base64 (filename: &str) -> Vec<u8> {
     let fh = File::open(filename).unwrap();
-    return ::std::io::BufStream::new(fh)
+    return ::std::io::BufReader::new(fh)
         .lines()
         .map(|line| line.unwrap().from_base64().unwrap())
         .collect::<Vec<Vec<u8>>>()

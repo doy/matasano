@@ -29,7 +29,7 @@ pub fn sha1 (bytes: &[u8]) -> [u8; 20] {
         };
         let mut w: [u32; 80] = unsafe { ::std::mem::uninitialized() };
         for i in 0..16 {
-            w[i] = ::std::num::Int::from_be(chunk_words[i]);
+            w[i] = u32::from_be(chunk_words[i]);
         }
         for i in 16..80 {
             w[i] = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]).rotate_left(1);
