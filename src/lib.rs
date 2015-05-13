@@ -29,6 +29,7 @@ pub use random::MersenneTwister;
 pub use random::mt19937_stream_cipher;
 pub use sha1::sha1;
 pub use sha1::pad_sha1;
+pub use sha1::sha1_padding;
 pub use sha1::sha1_with_state;
 pub use sha1::sha1_mac;
 pub use crack::BlockCipherMode;

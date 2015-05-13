@@ -14,16 +14,22 @@ pub fn sha1 (bytes: &[u8]) -> [u8; 20] {
 }
 
 pub fn pad_sha1 (bytes: &[u8]) -> Vec<u8> {
-    let ml: u64 = bytes.len() as u64 * 8;
-    let ml_bytes: [u8; 8] = unsafe {
-        ::std::mem::transmute(ml.to_be())
-    };
-
     return bytes
         .iter()
         .map(|x| *x)
-        .chain(::std::iter::repeat(0x80).take(1))
-        .chain(::std::iter::repeat(0x00).take(55 - (bytes.len() % 64)))
+        .chain(sha1_padding(bytes.len() as u64))
+        .collect();
+}
+
+pub fn sha1_padding (len: u64) -> Vec<u8> {
+    let ml: u64 = len * 8;
+    let ml_bytes: [u8; 8] = unsafe {
+        ::std::mem::transmute(ml.to_be())
+    };
+    return [0x80u8]
+        .iter()
+        .map(|x| *x)
+        .chain(::std::iter::repeat(0x00).take(55 - (len % 64) as usize))
         .chain(ml_bytes.iter().map(|x| *x))
         .collect();
 }
