@@ -29,7 +29,7 @@ pub fn sha1_padding (len: u64) -> Vec<u8> {
     return [0x80u8]
         .iter()
         .map(|x| *x)
-        .chain(::std::iter::repeat(0x00).take(55 - (len % 64) as usize))
+        .chain(::std::iter::repeat(0x00).take((119 - (len % 64) as usize) % 64))
         .chain(ml_bytes.iter().map(|x| *x))
         .collect();
 }
