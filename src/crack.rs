@@ -474,6 +474,28 @@ pub fn crack_cbc_iv_key<F1, F2> (encrypt: &F1, verify: &F2) -> Vec<u8> where F1:
     }
 }
 
+pub fn crack_sha1_mac_length_extension (input: &[u8], mac: [u8; 20], extension: &[u8]) -> Vec<(Vec<u8>, [u8; 20])> {
+    let mut sha1_state: [u32; 5] = unsafe { ::std::mem::transmute(mac) };
+    for word in sha1_state.iter_mut() {
+        *word = u32::from_be(*word);
+    }
+
+    (0..100).map(|i| {
+        let new_input: Vec<u8> = input
+            .iter()
+            .chain(::sha1::sha1_padding(i + input.len() as u64).iter())
+            .chain(extension.iter())
+            .map(|x| *x)
+            .collect();
+        let new_hash = ::sha1::sha1_with_state(
+            extension,
+            sha1_state,
+            i + new_input.len() as u64
+        );
+        (new_input, new_hash)
+    }).collect()
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

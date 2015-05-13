@@ -133,3 +133,25 @@ fn problem_27 () {
 }
 
 // problem 28 is just matasano::sha1_mac
+
+#[test]
+fn problem_29 () {
+    let key: Vec<u8> = ::rand::thread_rng()
+        .gen_iter()
+        .take(::rand::thread_rng().gen_range(5, 25))
+        .collect();
+
+    let valid_input = b"comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon";
+    let valid_mac = matasano::sha1_mac(valid_input, &key[..]);
+    let possibles = matasano::crack_sha1_mac_length_extension(valid_input, valid_mac, b";admin=true");
+    assert!(
+        possibles.iter().all(|&(ref input, _)| {
+            input.ends_with(b";admin=true")
+        })
+    );
+    assert!(
+        possibles.iter().any(|&(ref input, ref mac)| {
+            &matasano::sha1_mac(&input[..], &key[..])[..] == &mac[..]
+        })
+    );
+}

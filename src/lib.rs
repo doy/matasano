@@ -51,3 +51,4 @@ pub use crack::recover_mt19937_key_from_time;
 pub use crack::crack_aes_128_ctr_random_access;
 pub use crack::crack_ctr_bitflipping;
 pub use crack::crack_cbc_iv_key;
+pub use crack::crack_sha1_mac_length_extension;
