@@ -92,8 +92,8 @@ pub fn sha1_with_state (bytes: &[u8], mut h: [u32; 5]) -> [u8; 20] {
 pub fn sha1_mac (bytes: &[u8], key: &[u8]) -> [u8; 20] {
     let full_bytes: Vec<u8> = key
         .iter()
+        .chain(bytes.iter())
         .map(|x| *x)
-        .chain(bytes.iter().map(|x| *x))
         .collect();
     return sha1(&full_bytes[..]);
 }
