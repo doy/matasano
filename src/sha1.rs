@@ -9,15 +9,16 @@ pub fn sha1 (bytes: &[u8]) -> [u8; 20] {
             0x98BADCFE,
             0x10325476,
             0xC3D2E1F0,
-        ]
+        ],
+        bytes.len() as u64
     )
 }
 
-pub fn pad_sha1 (bytes: &[u8]) -> Vec<u8> {
+pub fn pad_sha1 (bytes: &[u8], len: u64) -> Vec<u8> {
     return bytes
         .iter()
         .map(|x| *x)
-        .chain(sha1_padding(bytes.len() as u64))
+        .chain(sha1_padding(len))
         .collect();
 }
 
@@ -34,8 +35,8 @@ pub fn sha1_padding (len: u64) -> Vec<u8> {
         .collect();
 }
 
-pub fn sha1_with_state (bytes: &[u8], mut h: [u32; 5]) -> [u8; 20] {
-    for chunk in pad_sha1(bytes).chunks(64) {
+pub fn sha1_with_state (bytes: &[u8], mut h: [u32; 5], len: u64) -> [u8; 20] {
+    for chunk in pad_sha1(bytes, len).chunks(64) {
         let chunk_words: &[u32; 16] = unsafe {
             ::std::mem::transmute(chunk.as_ptr())
         };
