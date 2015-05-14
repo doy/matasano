@@ -496,6 +496,28 @@ pub fn crack_sha1_mac_length_extension (input: &[u8], mac: [u8; 20], extension: 
     }).collect()
 }
 
+pub fn crack_md4_mac_length_extension (input: &[u8], mac: [u8; 16], extension: &[u8]) -> Vec<(Vec<u8>, [u8; 16])> {
+    let mut md4_state: [u32; 4] = unsafe { ::std::mem::transmute(mac) };
+    for word in md4_state.iter_mut() {
+        *word = u32::from_le(*word);
+    }
+
+    (0..100).map(|i| {
+        let new_input: Vec<u8> = input
+            .iter()
+            .chain(::md4::md4_padding(i + input.len() as u64).iter())
+            .chain(extension.iter())
+            .map(|x| *x)
+            .collect();
+        let new_hash = ::md4::md4_with_state(
+            extension,
+            md4_state,
+            i + new_input.len() as u64
+        );
+        (new_input, new_hash)
+    }).collect()
+}
+
 fn crack_single_byte_xor_with_confidence (input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

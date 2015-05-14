@@ -58,3 +58,4 @@ pub use crack::crack_aes_128_ctr_random_access;
 pub use crack::crack_ctr_bitflipping;
 pub use crack::crack_cbc_iv_key;
 pub use crack::crack_sha1_mac_length_extension;
+pub use crack::crack_md4_mac_length_extension;
