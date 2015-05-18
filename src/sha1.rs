@@ -1,5 +1,7 @@
 #[cfg(test)] use serialize::hex::ToHex;
 
+use primitives::fixed_xor;
+
 pub fn sha1 (bytes: &[u8]) -> [u8; 20] {
     sha1_with_state(
         bytes,
@@ -99,6 +101,34 @@ pub fn sha1_mac (bytes: &[u8], key: &[u8]) -> [u8; 20] {
     return sha1(&full_bytes[..]);
 }
 
+pub fn sha1_hmac (bytes: &[u8], key: &[u8]) -> [u8; 20] {
+    let blocksize = 64;
+    let fixed_key: Vec<u8> = if key.len() > blocksize {
+        sha1(key).iter()
+            .map(|x| *x)
+            .chain(::std::iter::repeat(0x00u8).take(44))
+            .collect()
+    }
+    else {
+        key.iter()
+            .map(|x| *x)
+            .chain(::std::iter::repeat(0x00u8).take(blocksize - key.len()))
+            .collect()
+    };
+
+    let ipad: Vec<u8> = ::std::iter::repeat(0x36u8).take(blocksize).collect();
+    let opad: Vec<u8> = ::std::iter::repeat(0x5cu8).take(blocksize).collect();
+    let k_ipad = fixed_xor(&ipad[..], &fixed_key[..]);
+    let k_opad = fixed_xor(&opad[..], &fixed_key[..]);
+
+    let inner = sha1(
+        &k_ipad.iter().chain(bytes.iter()).map(|x| *x).collect::<Vec<u8>>()[..]
+    );
+    return sha1(
+        &k_opad.iter().chain(inner.iter()).map(|x| *x).collect::<Vec<u8>>()[..]
+    )
+}
+
 #[test]
 fn test_sha1 () {
     let tests = [
@@ -119,4 +149,10 @@ fn test_sha1 () {
         let got = &sha1(input)[..].to_hex();
         assert_eq!(got, expected);
     }
+}
+
+#[test]
+fn test_sha1_hmac () {
+    assert_eq!(&sha1_hmac(b"", b"")[..].to_hex(), "fbdb1d1b18aa6c08324b7d64b71fb76370690e1d");
+    assert_eq!(&sha1_hmac(b"The quick brown fox jumps over the lazy dog", b"key")[..].to_hex(), "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9");
 }

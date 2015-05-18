@@ -38,6 +38,7 @@ pub use sha1::pad_sha1;
 pub use sha1::sha1_padding;
 pub use sha1::sha1_with_state;
 pub use sha1::sha1_mac;
+pub use sha1::sha1_hmac;
 pub use crack::BlockCipherMode;
 pub use crack::find_aes_128_ecb_encrypted_string;
 pub use crack::detect_ecb_cbc;
