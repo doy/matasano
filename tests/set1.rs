@@ -1,7 +1,4 @@
-extern crate matasano;
-extern crate rustc_serialize as serialize;
-
-use serialize::hex::FromHex;
+use rustc_serialize::hex::FromHex;
 
 mod util;
 

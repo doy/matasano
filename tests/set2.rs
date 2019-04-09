@@ -1,12 +1,8 @@
-extern crate matasano;
-extern crate rand;
-extern crate rustc_serialize as serialize;
-
 use std::borrow::ToOwned;
 use std::collections::HashMap;
 
 use rand::Rng;
-use serialize::base64::FromBase64;
+use rustc_serialize::base64::FromBase64;
 
 mod util;
 

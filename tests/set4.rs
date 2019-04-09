@@ -1,6 +1,3 @@
-extern crate matasano;
-extern crate rand;
-
 use rand::Rng;
 
 mod util;
