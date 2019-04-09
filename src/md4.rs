@@ -1,6 +1,3 @@
-#[cfg(test)]
-use rustc_serialize::hex::ToHex;
-
 pub fn md4(bytes: &[u8]) -> [u8; 16] {
     md4_with_state(
         bytes,
@@ -185,7 +182,7 @@ fn test_md4() {
     ];
     for &(input, expected) in tests.iter() {
         println!("{:?}", input);
-        let got = &md4(input)[..].to_hex();
+        let got = hex::encode(&md4(input)[..]);
         assert_eq!(got, expected);
     }
 }

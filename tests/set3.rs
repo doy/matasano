@@ -1,5 +1,4 @@
 use rand::{FromEntropy, Rng};
-use rustc_serialize::base64::FromBase64;
 
 mod util;
 
@@ -22,7 +21,7 @@ fn problem_17() {
     static mut CHOSEN_PLAINTEXT_IDX: usize = 0;
     let encrypter = || {
         let idx = rand::thread_rng().gen_range(0, strings.len());
-        let plaintext = strings[idx].from_base64().unwrap();
+        let plaintext = base64::decode(strings[idx]).unwrap();
         unsafe { CHOSEN_PLAINTEXT_IDX = idx };
         let iv = util::random_aes_128_key();
         return (
@@ -45,17 +44,18 @@ fn problem_17() {
             &validator,
         );
         let idx = unsafe { CHOSEN_PLAINTEXT_IDX.clone() };
-        let expected = strings[idx].from_base64().unwrap();
+        let expected = base64::decode(strings[idx]).unwrap();
         assert_eq!(plaintext, expected);
     }
 }
 
 #[test]
 fn problem_18() {
-    let ciphertext = b"L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syL\
-                       XzhPweyyMTJULu/6/kXX0KSvoOLSFQ=="
-        .from_base64()
-        .unwrap();
+    let ciphertext = base64::decode(
+        &b"L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syL\
+           XzhPweyyMTJULu/6/kXX0KSvoOLSFQ=="[..],
+    )
+    .unwrap();
     let plaintext =
         &b"Yo, VIP Let's kick it Ice, Ice, baby Ice, Ice, baby "[..];
     let got = matasano::aes_128_ctr(&ciphertext[..], b"YELLOW SUBMARINE", 0);

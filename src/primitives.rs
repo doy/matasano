@@ -1,3 +1,7 @@
+pub fn to_base64(bytes: &[u8]) -> String {
+    return base64::encode(bytes);
+}
+
 pub fn fixed_xor(bytes1: &[u8], bytes2: &[u8]) -> Vec<u8> {
     return bytes1
         .iter()

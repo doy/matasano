@@ -2,7 +2,6 @@ use std::borrow::ToOwned;
 use std::collections::HashMap;
 
 use rand::Rng;
-use rustc_serialize::base64::FromBase64;
 
 mod util;
 
@@ -74,13 +73,14 @@ fn problem_11() {
 
 #[test]
 fn problem_12() {
-    let padding = b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWct\
-                    dG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpU\
-                    aGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\
-                    dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5v\
-                    LCBJIGp1c3QgZHJvdmUgYnkK"
-        .from_base64()
-        .unwrap();
+    let padding = base64::decode(
+        &b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWct\
+           dG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpU\
+           aGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\
+           dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5v\
+           LCBJIGp1c3QgZHJvdmUgYnkK"[..],
+    )
+    .unwrap();
     let fixed_padding = |input: &[u8]| -> Vec<u8> {
         return input.iter().chain(padding.iter()).map(|x| *x).collect();
     };
@@ -137,13 +137,14 @@ fn problem_13() {
 
 #[test]
 fn problem_14() {
-    let padding = b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWct\
-                    dG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpU\
-                    aGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\
-                    dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5v\
-                    LCBJIGp1c3QgZHJvdmUgYnkK"
-        .from_base64()
-        .unwrap();
+    let padding = base64::decode(
+        &b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWct\
+           dG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpU\
+           aGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\
+           dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5v\
+           LCBJIGp1c3QgZHJvdmUgYnkK"[..],
+    )
+    .unwrap();
     let front_padding: Vec<u8> = rand::thread_rng()
         .sample_iter(&rand::distributions::Standard)
         .take(rand::thread_rng().gen_range(1, 100))

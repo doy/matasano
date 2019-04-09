@@ -22,7 +22,8 @@ name = "set4"
 path = "tests/set4.rs"
 
 [dependencies]
-rustc-serialize = "0.3"
+base64 = "0.10"
+hex = "0.3"
 openssl = "0.10"
 rand = "0.6"
 rand_core = "0.4"

@@ -1,6 +1,3 @@
-#[cfg(test)]
-use rustc_serialize::hex::ToHex;
-
 use crate::primitives::fixed_xor;
 
 pub fn sha1(bytes: &[u8]) -> [u8; 20] {
@@ -138,7 +135,7 @@ fn test_sha1() {
         ),
     ];
     for &(input, expected) in tests.iter() {
-        let got = &sha1(input)[..].to_hex();
+        let got = hex::encode(&sha1(input)[..]);
         assert_eq!(got, expected);
     }
 }
@@ -146,8 +143,16 @@ fn test_sha1() {
 #[test]
 fn test_sha1_hmac() {
     assert_eq!(
-        &sha1_hmac(b"", b"")[..].to_hex(),
+        hex::encode(&sha1_hmac(b"", b"")[..]),
         "fbdb1d1b18aa6c08324b7d64b71fb76370690e1d"
     );
-    assert_eq!(&sha1_hmac(b"The quick brown fox jumps over the lazy dog", b"key")[..].to_hex(), "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9");
+    assert_eq!(
+        hex::encode(
+            &sha1_hmac(
+                b"The quick brown fox jumps over the lazy dog",
+                b"key"
+            )[..]
+        ),
+        "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9"
+    );
 }

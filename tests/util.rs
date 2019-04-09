@@ -4,14 +4,11 @@ use rand::{Rng, RngCore};
 use std::fs::File;
 use std::io::prelude::*;
 
-use rustc_serialize::base64::FromBase64;
-use rustc_serialize::hex::FromHex;
-
 pub fn read_as_hex_lines(filename: &str) -> Vec<Vec<u8>> {
     let fh = File::open(filename).unwrap();
     return std::io::BufReader::new(fh)
         .lines()
-        .map(|line| line.unwrap().from_hex().unwrap())
+        .map(|line| hex::decode(line.unwrap()).unwrap())
         .collect();
 }
 
@@ -19,7 +16,7 @@ pub fn read_as_base64_lines(filename: &str) -> Vec<Vec<u8>> {
     let fh = File::open(filename).unwrap();
     return std::io::BufReader::new(fh)
         .lines()
-        .map(|line| line.unwrap().from_base64().unwrap())
+        .map(|line| base64::decode(&line.unwrap()).unwrap())
         .collect();
 }
 
@@ -35,7 +32,7 @@ pub fn read_as_base64(filename: &str) -> Vec<u8> {
     let fh = File::open(filename).unwrap();
     return std::io::BufReader::new(fh)
         .lines()
-        .map(|line| line.unwrap().from_base64().unwrap())
+        .map(|line| base64::decode(&line.unwrap()).unwrap())
         .collect::<Vec<Vec<u8>>>()
         .concat();
 }
