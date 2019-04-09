@@ -28,15 +28,19 @@ fn insecure_compare(a: &[u8], b: &[u8]) -> bool {
     true
 }
 
-fn index(info: actix_web::Query<Info>, key: &[u8]) -> String {
+fn index(
+    info: actix_web::Query<Info>,
+    key: &[u8],
+) -> actix_web::Result<String> {
     let hmac = matasano::sha1_hmac(&info.file.clone().into_bytes(), key);
+    println!("hmac for {} is {}", info.file, hex::encode(hmac));
     if insecure_compare(
         &hex::decode(info.signature.clone()).unwrap(),
         &hmac[..],
     ) {
-        "true".to_string()
+        Ok("ok".to_string())
     } else {
-        "false".to_string()
+        Err(actix_web::error::ErrorBadRequest("hmac failed"))
     }
 }
 
@@ -50,7 +54,7 @@ fn main() {
         let key = key.clone();
         actix_web::App::new().resource("/", |r| {
             r.method(actix_web::http::Method::GET)
-                .with(move |info: actix_web::Query<Info>| index(info, &key))
+                .with(move |info| index(info, &key))
         })
     })
     .bind("127.0.0.1:9000")
