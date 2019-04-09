@@ -1,40 +1,30 @@
-#[cfg(test)] use serialize::hex::ToHex;
+#[cfg(test)]
+use rustc_serialize::hex::ToHex;
 
-pub fn md4 (bytes: &[u8]) -> [u8; 16] {
+pub fn md4(bytes: &[u8]) -> [u8; 16] {
     md4_with_state(
         bytes,
-        [
-            0x67452301,
-            0xEFCDAB89,
-            0x98BADCFE,
-            0x10325476,
-        ],
-        bytes.len() as u64
+        [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476],
+        bytes.len() as u64,
     )
 }
 
-pub fn pad_md4 (bytes: &[u8], len: u64) -> Vec<u8> {
-    return bytes
-        .iter()
-        .map(|x| *x)
-        .chain(md4_padding(len))
-        .collect();
+pub fn pad_md4(bytes: &[u8], len: u64) -> Vec<u8> {
+    return bytes.iter().map(|x| *x).chain(md4_padding(len)).collect();
 }
 
-pub fn md4_padding (len: u64) -> Vec<u8> {
+pub fn md4_padding(len: u64) -> Vec<u8> {
     let ml: u64 = len * 8;
-    let ml_bytes: [u8; 8] = unsafe {
-        ::std::mem::transmute(ml.to_le())
-    };
+    let ml_bytes: [u8; 8] = unsafe { std::mem::transmute(ml.to_le()) };
     return [0x80u8]
         .iter()
         .map(|x| *x)
-        .chain(::std::iter::repeat(0x00).take((119 - (len % 64) as usize) % 64))
+        .chain(std::iter::repeat(0x00).take((119 - (len % 64) as usize) % 64))
         .chain(ml_bytes.iter().map(|x| *x))
         .collect();
 }
 
-fn round1 (offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
+fn round1(offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
     let a = (4 - offset as usize) % 4;
     let b = (5 - offset as usize) % 4;
     let c = (6 - offset as usize) % 4;
@@ -46,7 +36,7 @@ fn round1 (offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
         .rotate_left(s)
 }
 
-fn round2 (offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
+fn round2(offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
     let a = (4 - offset as usize) % 4;
     let b = (5 - offset as usize) % 4;
     let c = (6 - offset as usize) % 4;
@@ -59,7 +49,7 @@ fn round2 (offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
         .rotate_left(s)
 }
 
-fn round3 (offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
+fn round3(offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
     let a = (4 - offset as usize) % 4;
     let b = (5 - offset as usize) % 4;
     let c = (6 - offset as usize) % 4;
@@ -72,67 +62,66 @@ fn round3 (offset: u32, x: u32, s: u32, h: &mut [u32; 4]) {
         .rotate_left(s)
 }
 
-pub fn md4_with_state (bytes: &[u8], mut h: [u32; 4], len: u64) -> [u8; 16] {
+pub fn md4_with_state(bytes: &[u8], mut h: [u32; 4], len: u64) -> [u8; 16] {
     for chunk in pad_md4(bytes, len).chunks(64) {
-        let chunk_words: &[u32; 16] = unsafe {
-            ::std::mem::transmute(chunk.as_ptr())
-        };
-        let mut x: [u32; 16] = unsafe { ::std::mem::uninitialized() };
+        let chunk_words: &[u32; 16] =
+            unsafe { std::mem::transmute(chunk.as_ptr()) };
+        let mut x: [u32; 16] = unsafe { std::mem::uninitialized() };
         for i in 0..16 {
             x[i] = u32::from_le(chunk_words[i]);
         }
 
         let mut hh = h;
 
-        round1(0, x[ 0],  3, &mut hh);
-        round1(1, x[ 1],  7, &mut hh);
-        round1(2, x[ 2], 11, &mut hh);
-        round1(3, x[ 3], 19, &mut hh);
-        round1(0, x[ 4],  3, &mut hh);
-        round1(1, x[ 5],  7, &mut hh);
-        round1(2, x[ 6], 11, &mut hh);
-        round1(3, x[ 7], 19, &mut hh);
-        round1(0, x[ 8],  3, &mut hh);
-        round1(1, x[ 9],  7, &mut hh);
+        round1(0, x[0], 3, &mut hh);
+        round1(1, x[1], 7, &mut hh);
+        round1(2, x[2], 11, &mut hh);
+        round1(3, x[3], 19, &mut hh);
+        round1(0, x[4], 3, &mut hh);
+        round1(1, x[5], 7, &mut hh);
+        round1(2, x[6], 11, &mut hh);
+        round1(3, x[7], 19, &mut hh);
+        round1(0, x[8], 3, &mut hh);
+        round1(1, x[9], 7, &mut hh);
         round1(2, x[10], 11, &mut hh);
         round1(3, x[11], 19, &mut hh);
-        round1(0, x[12],  3, &mut hh);
-        round1(1, x[13],  7, &mut hh);
+        round1(0, x[12], 3, &mut hh);
+        round1(1, x[13], 7, &mut hh);
         round1(2, x[14], 11, &mut hh);
         round1(3, x[15], 19, &mut hh);
 
-        round2(0, x[ 0],  3, &mut hh);
-        round2(1, x[ 4],  5, &mut hh);
-        round2(2, x[ 8],  9, &mut hh);
+        round2(0, x[0], 3, &mut hh);
+        round2(1, x[4], 5, &mut hh);
+        round2(2, x[8], 9, &mut hh);
         round2(3, x[12], 13, &mut hh);
-        round2(0, x[ 1],  3, &mut hh);
-        round2(1, x[ 5],  5, &mut hh);
-        round2(2, x[ 9],  9, &mut hh);
+        round2(0, x[1], 3, &mut hh);
+        round2(1, x[5], 5, &mut hh);
+        round2(2, x[9], 9, &mut hh);
         round2(3, x[13], 13, &mut hh);
-        round2(0, x[ 2],  3, &mut hh);
-        round2(1, x[ 6],  5, &mut hh);
-        round2(2, x[10],  9, &mut hh);
+        round2(0, x[2], 3, &mut hh);
+        round2(1, x[6], 5, &mut hh);
+        round2(2, x[10], 9, &mut hh);
         round2(3, x[14], 13, &mut hh);
-        round2(0, x[ 3],  3, &mut hh);
-        round2(1, x[ 7],  5, &mut hh);
-        round2(2, x[11],  9, &mut hh);
+        round2(0, x[3], 3, &mut hh);
+        round2(1, x[7], 5, &mut hh);
+        round2(2, x[11], 9, &mut hh);
         round2(3, x[15], 13, &mut hh);
 
-        round3(0, x[ 0],  3, &mut hh);
-        round3(1, x[ 8],  9, &mut hh);
-        round3(2, x[ 4], 11, &mut hh);
+        round3(0, x[0], 3, &mut hh);
+        round3(1, x[8], 9, &mut hh);
+        round3(2, x[4], 11, &mut hh);
         round3(3, x[12], 15, &mut hh);
-        round3(0, x[ 2],  3, &mut hh);
-        round3(1, x[10],  9, &mut hh);
-        round3(2, x[ 6], 11, &mut hh);
+        round3(0, x[2], 3, &mut hh);
+        round3(1, x[10], 9, &mut hh);
+        round3(2, x[6], 11, &mut hh);
         round3(3, x[14], 15, &mut hh);
-        round3(0, x[ 1],  3, &mut hh);
-        round3(1, x[ 9],  9, &mut hh);
-        round3(2, x[ 5], 11, &mut hh);
+        round3(0, x[1], 3, &mut hh);
+        round3(1, x[9], 9, &mut hh);
+        round3(2, x[5], 11, &mut hh);
         round3(3, x[13], 15, &mut hh);
-        round3(0, x[ 3],  3, &mut hh);
-        round3(1, x[11],  9, &mut hh);
-        round3(2, x[ 7], 11, &mut hh);
+        round3(0, x[3], 3, &mut hh);
+        round3(1, x[11], 9, &mut hh);
+        round3(2, x[7], 11, &mut hh);
         round3(3, x[15], 15, &mut hh);
 
         h[0] = h[0].wrapping_add(hh[0]);
@@ -145,20 +134,17 @@ pub fn md4_with_state (bytes: &[u8], mut h: [u32; 4], len: u64) -> [u8; 16] {
         *word = word.to_le();
     }
 
-    return unsafe { ::std::mem::transmute(h) };
+    return unsafe { std::mem::transmute(h) };
 }
 
-pub fn md4_mac (bytes: &[u8], key: &[u8]) -> [u8; 16] {
-    let full_bytes: Vec<u8> = key
-        .iter()
-        .chain(bytes.iter())
-        .map(|x| *x)
-        .collect();
+pub fn md4_mac(bytes: &[u8], key: &[u8]) -> [u8; 16] {
+    let full_bytes: Vec<u8> =
+        key.iter().chain(bytes.iter()).map(|x| *x).collect();
     return md4(&full_bytes[..]);
 }
 
 #[test]
-fn test_md4 () {
+fn test_md4() {
     let tests = [
         (
             &b""[..],

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub fn parse_query_string (string: &str) -> Option<HashMap<&str, &str>> {
+pub fn parse_query_string(string: &str) -> Option<HashMap<&str, &str>> {
     let mut map = HashMap::new();
     let mut offset = 0;
     let len = string.as_bytes().len();
@@ -10,14 +10,14 @@ pub fn parse_query_string (string: &str) -> Option<HashMap<&str, &str>> {
             let key_end = key_start + found;
             let key = &string[key_start..key_end];
             let value_start = key_end + 1;
-            let value_end = value_start + string[value_start..]
-                .find('&')
-                .unwrap_or_else(|| string[value_start..].as_bytes().len());
+            let value_end = value_start
+                + string[value_start..].find('&').unwrap_or_else(|| {
+                    string[value_start..].as_bytes().len()
+                });
             let value = &string[value_start..value_end];
             map.insert(key, value);
             offset = value_end + 1;
-        }
-        else {
+        } else {
             return None;
         }
     }
@@ -25,9 +25,11 @@ pub fn parse_query_string (string: &str) -> Option<HashMap<&str, &str>> {
     return Some(map);
 }
 
-pub fn create_query_string (params: HashMap<&str, &str>) -> String {
-    fn escape (s: &str) -> String {
-        s.replace("%", "%25").replace("&", "%26").replace("=", "%3D")
+pub fn create_query_string(params: HashMap<&str, &str>) -> String {
+    fn escape(s: &str) -> String {
+        s.replace("%", "%25")
+            .replace("&", "%26")
+            .replace("=", "%3D")
     }
 
     let mut parts = vec![];
@@ -37,11 +39,11 @@ pub fn create_query_string (params: HashMap<&str, &str>) -> String {
         part.push_str(&escape(v)[..]);
         parts.push(part);
     }
-    return parts.connect("&");
+    return parts.join("&");
 }
 
 #[test]
-fn test_parse_query_string () {
+fn test_parse_query_string() {
     let got = parse_query_string("foo=bar&baz=qux&zap=zazzle");
     let mut expected = HashMap::new();
     expected.insert("foo", "bar");
@@ -53,7 +55,7 @@ fn test_parse_query_string () {
 }
 
 #[test]
-fn test_create_query_string () {
+fn test_create_query_string() {
     let mut params = HashMap::new();
     params.insert("foo", "bar");
     params.insert("baz", "qux");
@@ -66,18 +68,19 @@ fn test_create_query_string () {
     let expected5 = "zap=zazzle&foo=bar&baz=qux";
     let expected6 = "zap=zazzle&baz=qux&foo=bar";
     assert!(
-        got == expected1 ||
-        got == expected2 ||
-        got == expected3 ||
-        got == expected4 ||
-        got == expected5 ||
-        got == expected6,
-        "didn't parse query string correctly: {}", got
+        got == expected1
+            || got == expected2
+            || got == expected3
+            || got == expected4
+            || got == expected5
+            || got == expected6,
+        "didn't parse query string correctly: {}",
+        got
     );
 }
 
 #[test]
-fn test_create_query_string_malicious () {
+fn test_create_query_string_malicious() {
     let mut params = HashMap::new();
     params.insert("email", "foo@bar.com&role=admin");
     let got = create_query_string(params);
