@@ -22,9 +22,13 @@ name = "set4"
 path = "tests/set4.rs"
 
 [dependencies]
+actix = "0.7"
+actix-web = "0.7"
 base64 = "0.10"
 hex = "0.3"
 openssl = "0.10"
 rand = "0.6"
 rand_core = "0.4"
+serde = "1.0"
+serde_derive = "1.0"
 time = "0.1"
