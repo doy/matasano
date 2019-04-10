@@ -8,7 +8,7 @@ struct Info {
 }
 
 fn gen_key() -> Vec<u8> {
-    let mut key = [0u8; 80];
+    let mut key = [0u8; 16];
     rand::thread_rng().fill_bytes(&mut key);
     key.to_vec()
 }
@@ -33,7 +33,6 @@ fn index(
     key: &[u8],
 ) -> actix_web::Result<String> {
     let hmac = matasano::sha1_hmac(&info.file.clone().into_bytes(), key);
-    println!("hmac for {} is {}", info.file, hex::encode(hmac));
     if insecure_compare(
         &hex::decode(info.signature.clone()).unwrap(),
         &hmac[..],
