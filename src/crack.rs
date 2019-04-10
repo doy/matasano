@@ -574,6 +574,33 @@ pub fn crack_md4_mac_length_extension(
         .collect()
 }
 
+pub fn crack_hmac_timing(
+    _data: &str,
+    request: impl Fn(&str) -> bool,
+) -> Vec<u8> {
+    let mut res = [0; 20];
+
+    for idx in 0..20 {
+        let mut max_val = 0;
+        let mut max_dur = 0;
+        for i in 0..256 {
+            let now = std::time::Instant::now();
+            res[idx] = i as u8;
+            if request(&hex::encode(res)) {
+                return res.to_vec();
+            }
+            let dur = now.elapsed().as_micros();
+            if dur > max_dur {
+                max_dur = dur;
+                max_val = i;
+            }
+        }
+        res[idx] = max_val as u8;
+    }
+
+    unreachable!()
+}
+
 fn crack_single_byte_xor_with_confidence(input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

@@ -20,6 +20,7 @@ pub use crack::crack_cbc_iv_key;
 pub use crack::crack_cbc_padding_oracle;
 pub use crack::crack_ctr_bitflipping;
 pub use crack::crack_fixed_nonce_ctr_statistically;
+pub use crack::crack_hmac_timing;
 pub use crack::crack_md4_mac_length_extension;
 pub use crack::crack_padded_aes_128_ecb;
 pub use crack::crack_padded_aes_128_ecb_with_prefix;

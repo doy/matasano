@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::io::Read;
 
 mod util;
 
@@ -183,4 +184,49 @@ fn problem_30() {
         |&(ref input, ref mac)| &matasano::md4_mac(&input[..], &key[..])[..]
             == &mac[..]
     ));
+}
+
+#[test]
+#[ignore]
+fn problem_31() {
+    let exe_path = std::env::current_exe().unwrap();
+    let exe_dir = exe_path.parent().unwrap().parent().unwrap();
+    let server_bin = exe_dir.join("timing_attack");
+
+    let (ready_w, ready_r) = std::sync::mpsc::channel();
+    let (kill_w, kill_r) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let mut child = std::process::Command::new(server_bin)
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .unwrap();
+        let mut key = [0u8; 32];
+        let _ = child.stdout.as_mut().unwrap().read_exact(&mut key);
+        ready_w.send(key).unwrap();
+
+        let _ = kill_r.recv();
+        child.kill().unwrap();
+        child.wait().unwrap();
+    });
+
+    let key = hex::decode(ready_r.recv().unwrap()).unwrap();
+
+    let file = "filename.txt";
+    let got = matasano::crack_hmac_timing(file, |guess| {
+        let mut params = std::collections::HashMap::new();
+        params.insert("file", file);
+        params.insert("signature", guess);
+        let res = reqwest::get(&format!(
+            "{}{}",
+            "http://localhost:9000/?",
+            matasano::create_query_string(params)
+        ))
+        .unwrap();
+        let status = res.status();
+        status.is_success()
+    });
+    let expected = matasano::sha1_hmac(file.as_bytes(), &key);
+    assert_eq!(got, expected);
+
+    kill_w.send(()).unwrap();
 }
