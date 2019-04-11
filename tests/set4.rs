@@ -197,6 +197,7 @@ fn problem_31() {
     let (kill_w, kill_r) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
         let mut child = std::process::Command::new(server_bin)
+            .args(&["50"])
             .stdout(std::process::Stdio::piped())
             .spawn()
             .unwrap();

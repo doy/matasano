@@ -13,7 +13,7 @@ fn gen_key() -> Vec<u8> {
     key.to_vec()
 }
 
-fn insecure_compare(a: &[u8], b: &[u8]) -> bool {
+fn insecure_compare(a: &[u8], b: &[u8], delay: u64) -> bool {
     if a.len() != b.len() {
         return false;
     }
@@ -22,7 +22,7 @@ fn insecure_compare(a: &[u8], b: &[u8]) -> bool {
         if a[i] != b[i] {
             return false;
         }
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(delay));
     }
 
     true
@@ -31,11 +31,13 @@ fn insecure_compare(a: &[u8], b: &[u8]) -> bool {
 fn index(
     info: actix_web::Query<Info>,
     key: &[u8],
+    delay: u64,
 ) -> actix_web::Result<String> {
     let hmac = matasano::sha1_hmac(&info.file.clone().into_bytes(), key);
     if insecure_compare(
         &hex::decode(info.signature.clone()).unwrap(),
         &hmac[..],
+        delay,
     ) {
         Ok("ok".to_string())
     } else {
@@ -49,11 +51,14 @@ fn main() {
     let key = gen_key();
     println!("{}", hex::encode(&key));
 
+    let delay: u64 = std::env::args().nth(1).unwrap().parse().unwrap();
+
     actix_web::server::HttpServer::new(move || {
         let key = key.clone();
-        actix_web::App::new().resource("/", |r| {
+        let delay = delay.clone();
+        actix_web::App::new().resource("/", move |r| {
             r.method(actix_web::http::Method::GET)
-                .with(move |info| index(info, &key))
+                .with(move |info| index(info, &key, delay))
         })
     })
     .bind("127.0.0.1:9000")
