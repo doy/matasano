@@ -511,7 +511,11 @@ where
                 &modified_plaintext[32..48],
             );
             let desired_plaintext = b"comment1=cooking%20MCs;userdata=;admin=true;comment2=%20like%20a%20pound%20of%20bacon";
-            return encrypt_aes_128_cbc(desired_plaintext, &key[..], &key[..]);
+            return encrypt_aes_128_cbc(
+                desired_plaintext,
+                &key[..],
+                &key[..],
+            );
         }
     }
 }

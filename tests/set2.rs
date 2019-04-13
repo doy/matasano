@@ -50,7 +50,10 @@ fn problem_11() {
             unsafe {
                 LAST_MODE = matasano::BlockCipherMode::ECB;
             }
-            return matasano::encrypt_aes_128_ecb(&padded_input[..], &key[..]);
+            return matasano::encrypt_aes_128_ecb(
+                &padded_input[..],
+                &key[..],
+            );
         } else {
             unsafe {
                 LAST_MODE = matasano::BlockCipherMode::CBC;
