@@ -99,10 +99,10 @@ fn problem_12() {
 fn problem_13() {
     fn profile_for(email: &str) -> String {
         let mut params = HashMap::new();
-        params.insert("email", email);
-        params.insert("uid", "10");
-        params.insert("role", "user");
-        return matasano::create_query_string(params);
+        params.insert("email", email.to_string());
+        params.insert("uid", "10".to_string());
+        params.insert("role", "user".to_string());
+        return matasano::create_query_string(&params);
     }
 
     let key = util::random_aes_128_key();

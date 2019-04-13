@@ -25,7 +25,7 @@ pub fn parse_query_string(string: &str) -> Option<HashMap<&str, &str>> {
     return Some(map);
 }
 
-pub fn create_query_string(params: HashMap<&str, &str>) -> String {
+pub fn create_query_string(params: &HashMap<&str, String>) -> String {
     fn escape(s: &str) -> String {
         s.replace("%", "%25")
             .replace("&", "%26")
@@ -57,10 +57,10 @@ fn test_parse_query_string() {
 #[test]
 fn test_create_query_string() {
     let mut params = HashMap::new();
-    params.insert("foo", "bar");
-    params.insert("baz", "qux");
-    params.insert("zap", "zazzle");
-    let got = create_query_string(params);
+    params.insert("foo", "bar".to_string());
+    params.insert("baz", "qux".to_string());
+    params.insert("zap", "zazzle".to_string());
+    let got = create_query_string(&params);
     let expected1 = "foo=bar&baz=qux&zap=zazzle";
     let expected2 = "foo=bar&zap=zazzle&baz=qux";
     let expected3 = "baz=qux&foo=bar&zap=zazzle";
@@ -82,8 +82,8 @@ fn test_create_query_string() {
 #[test]
 fn test_create_query_string_malicious() {
     let mut params = HashMap::new();
-    params.insert("email", "foo@bar.com&role=admin");
-    let got = create_query_string(params);
+    params.insert("email", "foo@bar.com&role=admin".to_string());
+    let got = create_query_string(&params);
     let expected = "email=foo@bar.com%26role%3Dadmin";
     assert_eq!(got, expected);
 }

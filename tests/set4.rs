@@ -215,12 +215,12 @@ fn problem_31() {
     let file = "filename.txt";
     let got = matasano::crack_hmac_timing(file, |guess| {
         let mut params = std::collections::HashMap::new();
-        params.insert("file", file);
-        params.insert("signature", guess);
+        params.insert("file", file.to_string());
+        params.insert("signature", guess.to_string());
         let res = reqwest::get(&format!(
             "{}{}",
             "http://localhost:9000/?",
-            matasano::create_query_string(params)
+            matasano::create_query_string(&params)
         ))
         .unwrap();
         let status = res.status();
