@@ -1,4 +1,5 @@
 use rand::Rng;
+use rayon::prelude::*;
 use std::borrow::ToOwned;
 use std::collections::{HashMap, HashSet};
 
@@ -578,7 +579,7 @@ pub fn crack_md4_mac_length_extension(
         .collect()
 }
 
-pub fn crack_hmac_timing(
+pub fn crack_hmac_timing_basic(
     _data: &str,
     request: impl Fn(&str) -> bool,
 ) -> Vec<u8> {
@@ -603,6 +604,121 @@ pub fn crack_hmac_timing(
     }
 
     unreachable!()
+}
+
+fn crack_hmac_timing_advanced_rec<F>(
+    file: &str,
+    request: &F,
+    key: [u8; 20],
+    idx: usize,
+    timing_cutoff: u128,
+) -> Option<(Vec<(u8, u128)>, [u8; 20])>
+where
+    F: Sync + Send + Fn(&str) -> bool,
+{
+    let get_timing_for = |i: u8| {
+        let mut key = key.clone();
+        key[idx] = i;
+        let guess = hex::encode(key);
+
+        let mut params = std::collections::HashMap::new();
+        params.insert("file", file.to_string());
+        params.insert("signature", guess.to_string());
+        let uri = format!(
+            "{}{}",
+            "http://localhost:9000/?",
+            crate::http::create_query_string(&params)
+        );
+
+        let start = std::time::Instant::now();
+        let success = request(&uri);
+        (success, start.elapsed().as_micros())
+    };
+
+    let initial_timings: Vec<_> = (0..256)
+        .into_par_iter()
+        .map(|i| (i as u8, get_timing_for(i as u8)))
+        .collect();
+
+    for (i, (success, _)) in initial_timings.iter() {
+        if *success {
+            let mut key = key.clone();
+            key[idx] = *i;
+            return Some((vec![], key));
+        }
+    }
+
+    let (_, (_, min_dur)) = initial_timings
+        .iter()
+        .cloned()
+        .min_by_key(|(_, (_, dur))| *dur)
+        .unwrap();
+
+    let mut timings: Vec<_> = (0..256)
+        .into_par_iter()
+        .map(|i| {
+            let (_, (_, mut dur)) = initial_timings[i as usize];
+            let mut count = 0;
+            while dur > min_dur + 2500 && count < 100 {
+                let res = get_timing_for(i as u8);
+                dur = res.1;
+                count += 1;
+            }
+            (i as u8, dur)
+        })
+        .collect();
+
+    timings.par_sort_by_key(|(_, dur)| *dur);
+
+    // eprintln!(
+    //     "got timings for byte {} ranging from {} to {} (expected: >{})",
+    //     idx, timings[0].1, timings[255].1, timing_cutoff
+    // );
+
+    if timings[0].1 < timing_cutoff {
+        return None;
+    }
+
+    // if idx > 0 {
+    //     eprintln!("byte {} confirmed to be {}", idx - 1, key[idx - 1]);
+    // }
+
+    for (i, _dur) in timings.iter().rev() {
+        let mut new_key = key.clone();
+        new_key[idx] = *i;
+        // eprintln!("guessing that byte {} is {} (dur {})", idx, i, _dur);
+        let rec = crack_hmac_timing_advanced_rec(
+            file,
+            request,
+            new_key,
+            idx + 1,
+            timings[0].1 + 2500,
+        );
+        if rec.is_some() {
+            return rec;
+        }
+    }
+
+    unreachable!()
+}
+
+pub fn crack_hmac_timing_advanced<F>(file: &str, request: F) -> Vec<u8>
+where
+    F: Sync + Send + Fn(&str) -> bool,
+{
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(3)
+        .build()
+        .unwrap();
+
+    let key = pool.install(|| {
+        let (_, key) =
+            crack_hmac_timing_advanced_rec(file, &request, [0; 20], 0, 0)
+                .unwrap();
+        key
+    });
+
+    key.to_vec()
 }
 
 fn crack_single_byte_xor_with_confidence(input: &[u8]) -> (u8, f64) {
