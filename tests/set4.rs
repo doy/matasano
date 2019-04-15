@@ -186,6 +186,7 @@ fn problem_30() {
     ));
 }
 
+// ignored because this takes ~40 minutes
 #[test]
 #[ignore]
 fn problem_31() {
@@ -232,6 +233,7 @@ fn problem_31() {
     kill_w.send(()).unwrap();
 }
 
+// ignored because this takes ~18 hours
 #[test]
 #[ignore]
 fn problem_32() {
