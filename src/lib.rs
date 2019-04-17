@@ -1,6 +1,7 @@
 mod aes;
 mod crack;
 mod data;
+mod dh;
 mod http;
 mod md4;
 mod primitives;
@@ -36,6 +37,7 @@ pub use crack::recover_16_bit_mt19937_key;
 pub use crack::recover_mersenne_twister_seed_from_time;
 pub use crack::recover_mt19937_key_from_time;
 pub use crack::BlockCipherMode;
+pub use dh::DHKeyPair;
 pub use http::create_query_string;
 pub use http::parse_query_string;
 pub use md4::md4;

@@ -21,11 +21,16 @@ path = "tests/set3.rs"
 name = "set4"
 path = "tests/set4.rs"
 
+[[test]]
+name = "set5"
+path = "tests/set5.rs"
+
 [dependencies]
 actix = "0.7"
 actix-web = "0.7"
 base64 = "0.10"
 hex = "0.3"
+num-bigint = { version = "0.2", features = ["rand"] }
 openssl = "0.10"
 rand = "0.6"
 rand_core = "0.4"
