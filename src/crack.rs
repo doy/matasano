@@ -721,6 +721,162 @@ where
     key.to_vec()
 }
 
+pub trait DiffieHellmanMessageExchanger {
+    fn a_channel(
+        &self,
+    ) -> (
+        &crossbeam::channel::Sender<Vec<u8>>,
+        &crossbeam::channel::Receiver<Vec<u8>>,
+    );
+    fn b_channel(
+        &self,
+    ) -> (
+        &crossbeam::channel::Sender<Vec<u8>>,
+        &crossbeam::channel::Receiver<Vec<u8>>,
+    );
+}
+
+pub struct NullDiffieHellmanMessageExchanger {
+    a_sender: crossbeam::channel::Sender<Vec<u8>>,
+    a_recver: crossbeam::channel::Receiver<Vec<u8>>,
+    b_sender: crossbeam::channel::Sender<Vec<u8>>,
+    b_recver: crossbeam::channel::Receiver<Vec<u8>>,
+}
+
+impl NullDiffieHellmanMessageExchanger {
+    pub fn new() -> NullDiffieHellmanMessageExchanger {
+        let (a_sender, b_recver) = crossbeam::channel::unbounded();
+        let (b_sender, a_recver) = crossbeam::channel::unbounded();
+        NullDiffieHellmanMessageExchanger {
+            a_sender,
+            a_recver,
+            b_sender,
+            b_recver,
+        }
+    }
+}
+
+impl DiffieHellmanMessageExchanger for NullDiffieHellmanMessageExchanger {
+    fn a_channel(
+        &self,
+    ) -> (
+        &crossbeam::channel::Sender<Vec<u8>>,
+        &crossbeam::channel::Receiver<Vec<u8>>,
+    ) {
+        (&self.a_sender, &self.a_recver)
+    }
+
+    fn b_channel(
+        &self,
+    ) -> (
+        &crossbeam::channel::Sender<Vec<u8>>,
+        &crossbeam::channel::Receiver<Vec<u8>>,
+    ) {
+        (&self.b_sender, &self.b_recver)
+    }
+}
+
+pub struct ParameterInjectionDiffieHellmanMessageExchanger {
+    a_sender: crossbeam::channel::Sender<Vec<u8>>,
+    a_recver: crossbeam::channel::Receiver<Vec<u8>>,
+    b_sender: crossbeam::channel::Sender<Vec<u8>>,
+    b_recver: crossbeam::channel::Receiver<Vec<u8>>,
+    thread: std::thread::JoinHandle<Vec<u8>>,
+}
+
+impl ParameterInjectionDiffieHellmanMessageExchanger {
+    pub fn new() -> ParameterInjectionDiffieHellmanMessageExchanger {
+        let (a_sender, ma_recver) = crossbeam::channel::unbounded();
+        let (ma_sender, b_recver) = crossbeam::channel::unbounded();
+        let (b_sender, mb_recver) = crossbeam::channel::unbounded();
+        let (mb_sender, a_recver) = crossbeam::channel::unbounded();
+
+        let thread = std::thread::spawn(move || {
+            let a_bytes: Vec<u8> = ma_recver.recv().unwrap();
+            let a: crate::dh::DHKeyPair =
+                serde_json::from_slice(&a_bytes).unwrap();
+            let mut modified_a = a.clone();
+            modified_a.pubkey = modified_a.p.clone();
+            ma_sender
+                .send(serde_json::to_vec(&modified_a).unwrap())
+                .unwrap();
+
+            let b_bytes: Vec<u8> = mb_recver.recv().unwrap();
+            let b: crate::dh::DHKeyPair =
+                serde_json::from_slice(&b_bytes).unwrap();
+            let mut modified_b = b.clone();
+            modified_b.pubkey = modified_b.p.clone();
+            mb_sender
+                .send(serde_json::to_vec(&modified_b).unwrap())
+                .unwrap();
+
+            let a_ciphertext = ma_recver.recv().unwrap();
+            ma_sender.send(a_ciphertext.clone()).unwrap();
+            let a_iv = ma_recver.recv().unwrap();
+            ma_sender.send(a_iv.clone()).unwrap();
+
+            let b_ciphertext = mb_recver.recv().unwrap();
+            mb_sender.send(b_ciphertext.clone()).unwrap();
+            let b_iv = mb_recver.recv().unwrap();
+            mb_sender.send(b_iv.clone()).unwrap();
+
+            let s = num_bigint::BigUint::from(0 as u8);
+            let mut aes_key = crate::sha1::sha1(&s.to_bytes_le()).to_vec();
+            aes_key.truncate(16);
+
+            let a_plaintext = crate::aes::decrypt_aes_128_cbc(
+                &a_ciphertext,
+                &aes_key,
+                &a_iv,
+            )
+            .unwrap();
+            let b_plaintext = crate::aes::decrypt_aes_128_cbc(
+                &b_ciphertext,
+                &aes_key,
+                &b_iv,
+            )
+            .unwrap();
+            assert_eq!(a_plaintext, b_plaintext);
+
+            a_plaintext
+        });
+
+        ParameterInjectionDiffieHellmanMessageExchanger {
+            a_sender,
+            a_recver,
+            b_sender,
+            b_recver,
+            thread,
+        }
+    }
+
+    pub fn retrieve_plaintext(self) -> Vec<u8> {
+        self.thread.join().unwrap()
+    }
+}
+
+impl DiffieHellmanMessageExchanger
+    for ParameterInjectionDiffieHellmanMessageExchanger
+{
+    fn a_channel(
+        &self,
+    ) -> (
+        &crossbeam::channel::Sender<Vec<u8>>,
+        &crossbeam::channel::Receiver<Vec<u8>>,
+    ) {
+        (&self.a_sender, &self.a_recver)
+    }
+
+    fn b_channel(
+        &self,
+    ) -> (
+        &crossbeam::channel::Sender<Vec<u8>>,
+        &crossbeam::channel::Receiver<Vec<u8>>,
+    ) {
+        (&self.b_sender, &self.b_recver)
+    }
+}
+
 fn crack_single_byte_xor_with_confidence(input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;

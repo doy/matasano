@@ -1,10 +1,13 @@
 use num_bigint::RandBigInt;
+use serde_derive::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DHKeyPair {
     pub p: num_bigint::BigUint,
     pub g: num_bigint::BigUint,
     pub pubkey: num_bigint::BigUint,
-    privkey: num_bigint::BigUint,
+    #[serde(skip)]
+    privkey: Option<num_bigint::BigUint>,
 }
 
 impl DHKeyPair {
@@ -15,7 +18,7 @@ impl DHKeyPair {
             p,
             g,
             pubkey,
-            privkey,
+            privkey: Some(privkey),
         }
     }
 
@@ -23,6 +26,6 @@ impl DHKeyPair {
         &self,
         other_pubkey: &num_bigint::BigUint,
     ) -> num_bigint::BigUint {
-        other_pubkey.modpow(&self.privkey, &self.p)
+        other_pubkey.modpow(self.privkey.as_ref().unwrap(), &self.p)
     }
 }
