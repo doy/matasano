@@ -1,12 +1,10 @@
 use num_bigint::RandBigInt;
-use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct DHKeyPair {
     pub p: num_bigint::BigUint,
     pub g: num_bigint::BigUint,
     pub pubkey: num_bigint::BigUint,
-    #[serde(skip)]
     privkey: Option<num_bigint::BigUint>,
 }
 

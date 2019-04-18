@@ -785,29 +785,87 @@ pub struct ParameterInjectionDiffieHellmanMessageExchanger {
 }
 
 impl ParameterInjectionDiffieHellmanMessageExchanger {
-    pub fn new() -> ParameterInjectionDiffieHellmanMessageExchanger {
+    pub fn new<F, G, H>(
+        inject_pg: F,
+        inject_pubkey: G,
+        generate_s: H,
+    ) -> ParameterInjectionDiffieHellmanMessageExchanger
+    where
+        F: 'static
+            + Send
+            + Fn(
+                num_bigint::BigUint,
+                num_bigint::BigUint,
+            ) -> (num_bigint::BigUint, num_bigint::BigUint),
+        G: 'static
+            + Send
+            + Fn(
+                num_bigint::BigUint,
+                num_bigint::BigUint,
+                num_bigint::BigUint,
+            ) -> num_bigint::BigUint,
+        H: 'static
+            + Send
+            + Fn(
+                num_bigint::BigUint,
+                num_bigint::BigUint,
+            ) -> Vec<num_bigint::BigUint>,
+    {
         let (a_sender, ma_recver) = crossbeam::channel::unbounded();
         let (ma_sender, b_recver) = crossbeam::channel::unbounded();
         let (b_sender, mb_recver) = crossbeam::channel::unbounded();
         let (mb_sender, a_recver) = crossbeam::channel::unbounded();
 
         let thread = std::thread::spawn(move || {
-            let a_bytes: Vec<u8> = ma_recver.recv().unwrap();
-            let a: crate::dh::DHKeyPair =
-                serde_json::from_slice(&a_bytes).unwrap();
-            let mut modified_a = a.clone();
-            modified_a.pubkey = modified_a.p.clone();
+            let p_bytes: Vec<u8> = ma_recver.recv().unwrap();
+            let p: num_bigint::BigUint =
+                serde_json::from_slice(&p_bytes).unwrap();
+            let g_bytes: Vec<u8> = ma_recver.recv().unwrap();
+            let g: num_bigint::BigUint =
+                serde_json::from_slice(&g_bytes).unwrap();
+
+            let (modified_p, modified_g) = inject_pg(p.clone(), g.clone());
             ma_sender
-                .send(serde_json::to_vec(&modified_a).unwrap())
+                .send(serde_json::to_vec(&modified_p).unwrap())
+                .unwrap();
+            ma_sender
+                .send(serde_json::to_vec(&modified_g).unwrap())
+                .unwrap();
+
+            let p_bytes: Vec<u8> = mb_recver.recv().unwrap();
+            let p: num_bigint::BigUint =
+                serde_json::from_slice(&p_bytes).unwrap();
+            let g_bytes: Vec<u8> = mb_recver.recv().unwrap();
+            let g: num_bigint::BigUint =
+                serde_json::from_slice(&g_bytes).unwrap();
+            mb_sender
+                .send(serde_json::to_vec(&modified_p).unwrap())
+                .unwrap();
+            mb_sender
+                .send(serde_json::to_vec(&modified_g).unwrap())
+                .unwrap();
+
+            let possible_s =
+                generate_s(modified_p.clone(), modified_g.clone());
+
+            let a_bytes: Vec<u8> = ma_recver.recv().unwrap();
+            let a_pubkey: num_bigint::BigUint =
+                serde_json::from_slice(&a_bytes).unwrap();
+
+            let modified_pubkey_a =
+                inject_pubkey(p.clone(), g.clone(), a_pubkey);
+            ma_sender
+                .send(serde_json::to_vec(&modified_pubkey_a).unwrap())
                 .unwrap();
 
             let b_bytes: Vec<u8> = mb_recver.recv().unwrap();
-            let b: crate::dh::DHKeyPair =
+            let b_pubkey: num_bigint::BigUint =
                 serde_json::from_slice(&b_bytes).unwrap();
-            let mut modified_b = b.clone();
-            modified_b.pubkey = modified_b.p.clone();
+
+            let modified_pubkey_b =
+                inject_pubkey(p.clone(), g.clone(), b_pubkey);
             mb_sender
-                .send(serde_json::to_vec(&modified_b).unwrap())
+                .send(serde_json::to_vec(&modified_pubkey_b).unwrap())
                 .unwrap();
 
             let a_ciphertext = ma_recver.recv().unwrap();
@@ -820,25 +878,22 @@ impl ParameterInjectionDiffieHellmanMessageExchanger {
             let b_iv = mb_recver.recv().unwrap();
             mb_sender.send(b_iv.clone()).unwrap();
 
-            let s = num_bigint::BigUint::from(0 as u8);
-            let mut aes_key = crate::sha1::sha1(&s.to_bytes_le()).to_vec();
-            aes_key.truncate(16);
+            for s in possible_s {
+                let mut aes_key =
+                    crate::sha1::sha1(&s.to_bytes_le()).to_vec();
+                aes_key.truncate(16);
 
-            let a_plaintext = crate::aes::decrypt_aes_128_cbc(
-                &a_ciphertext,
-                &aes_key,
-                &a_iv,
-            )
-            .unwrap();
-            let b_plaintext = crate::aes::decrypt_aes_128_cbc(
-                &b_ciphertext,
-                &aes_key,
-                &b_iv,
-            )
-            .unwrap();
-            assert_eq!(a_plaintext, b_plaintext);
+                let a_plaintext = crate::aes::decrypt_aes_128_cbc(
+                    &a_ciphertext,
+                    &aes_key,
+                    &a_iv,
+                );
+                if let Some(a_plaintext) = a_plaintext {
+                    return a_plaintext;
+                }
+            }
 
-            a_plaintext
+            unreachable!()
         });
 
         ParameterInjectionDiffieHellmanMessageExchanger {
