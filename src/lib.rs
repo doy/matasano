@@ -42,6 +42,7 @@ pub use crack::DiffieHellmanMessageExchanger;
 pub use crack::NullDiffieHellmanMessageExchanger;
 pub use crack::ParameterInjectionDiffieHellmanMessageExchanger;
 pub use crack::SRPClient;
+pub use crack::ZeroKeySRPClient;
 pub use dh::DHKeyPair;
 pub use dh::SRPServer;
 pub use dh::SRPUser;

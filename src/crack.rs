@@ -1016,6 +1016,36 @@ impl<'a> SRPClient for CorrectSRPClient<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct ZeroKeySRPClient<'a> {
+    server: &'a mut crate::dh::SRPServer,
+}
+
+impl<'a> ZeroKeySRPClient<'a> {
+    pub fn new(server: &'a mut crate::dh::SRPServer) -> ZeroKeySRPClient<'a> {
+        ZeroKeySRPClient { server }
+    }
+}
+
+impl<'a> SRPClient for ZeroKeySRPClient<'a> {
+    fn server(&mut self) -> &mut crate::dh::SRPServer {
+        self.server
+    }
+
+    fn key_exchange_impl(
+        &mut self,
+        user: &str,
+        _: &str,
+    ) -> (Vec<u8>, Vec<u8>, num_bigint::BigUint) {
+        let a_pub = num_bigint::BigUint::from(0 as u8);
+        let (session, salt, _b_pub) =
+            self.server.exchange_pubkeys(user, &a_pub);
+
+        let s = num_bigint::BigUint::from(0 as u8);
+        (session, salt, s)
+    }
+}
+
 fn crack_single_byte_xor_with_confidence(input: &[u8]) -> (u8, f64) {
     let mut min_diff = 100.0;
     let mut best_key = 0;
