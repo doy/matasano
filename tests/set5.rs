@@ -1,3 +1,4 @@
+use matasano::SRPClient;
 use rand::Rng;
 
 #[test]
@@ -251,7 +252,7 @@ fn problem_36() {
     let pass = "supersecret";
 
     let mut server = matasano::SRPServer::new(n, g, k);
-    let mut client = matasano::SRPClient::new(&mut server);
+    let mut client = matasano::CorrectSRPClient::new(&mut server);
 
     client.register(user, pass);
 

@@ -1,3 +1,4 @@
+use num_bigint::RandBigInt;
 use rand::Rng;
 use rayon::prelude::*;
 use std::borrow::ToOwned;
@@ -929,6 +930,89 @@ impl DiffieHellmanMessageExchanger
         &crossbeam::channel::Receiver<Vec<u8>>,
     ) {
         (&self.b_sender, &self.b_recver)
+    }
+}
+
+pub trait SRPClient {
+    fn server(&mut self) -> &mut crate::dh::SRPServer;
+
+    fn key_exchange_impl(
+        &mut self,
+        user: &str,
+        pass: &str,
+    ) -> (Vec<u8>, Vec<u8>, num_bigint::BigUint);
+
+    fn register(&mut self, user: &str, pass: &str) {
+        let n = &self.server().n.clone();
+        let g = &self.server().g.clone();
+
+        let mut salt = [0; 16];
+        rand::thread_rng().fill(&mut salt);
+        let input = [&salt[..], pass.as_bytes()].concat();
+        let xh = crate::sha1::sha1(&input);
+        let x = num_bigint::BigUint::from_bytes_le(&xh[..]);
+        let v = g.modpow(&x, n);
+        self.server().register(user, &salt, &v);
+    }
+
+    fn key_exchange(
+        &mut self,
+        user: &str,
+        pass: &str,
+    ) -> Option<num_bigint::BigUint> {
+        let (session, salt, s) = self.key_exchange_impl(user, pass);
+        let k = crate::sha1::sha1(&s.to_bytes_le());
+        let hmac = crate::sha1::sha1_hmac(&k, &salt);
+
+        if !self.server().verify(session, hmac.to_vec()) {
+            return None;
+        }
+
+        Some(s)
+    }
+}
+
+#[derive(Debug)]
+pub struct CorrectSRPClient<'a> {
+    server: &'a mut crate::dh::SRPServer,
+}
+
+impl<'a> CorrectSRPClient<'a> {
+    pub fn new(server: &'a mut crate::dh::SRPServer) -> CorrectSRPClient<'a> {
+        CorrectSRPClient { server }
+    }
+}
+
+impl<'a> SRPClient for CorrectSRPClient<'a> {
+    fn server(&mut self) -> &mut crate::dh::SRPServer {
+        self.server
+    }
+
+    fn key_exchange_impl(
+        &mut self,
+        user: &str,
+        pass: &str,
+    ) -> (Vec<u8>, Vec<u8>, num_bigint::BigUint) {
+        let n = &self.server.n.clone();
+        let g = &self.server.g.clone();
+        let k = &self.server.k.clone();
+
+        let a_priv = rand::thread_rng().gen_biguint_below(n);
+        let a_pub = g.modpow(&a_priv, n);
+        let (session, salt, b_pub) =
+            self.server.exchange_pubkeys(user, &a_pub);
+
+        let uinput = [a_pub.to_bytes_le(), b_pub.to_bytes_le()].concat();
+        let uh = crate::sha1::sha1(&uinput);
+        let u = num_bigint::BigUint::from_bytes_le(&uh[..]);
+
+        let xinput = [salt.clone(), pass.as_bytes().to_vec()].concat();
+        let xh = crate::sha1::sha1(&xinput);
+        let x = num_bigint::BigUint::from_bytes_le(&xh[..]);
+
+        let s = (b_pub - k * g.modpow(&x, n)).modpow(&(a_priv + u * x), n);
+
+        (session, salt, s)
     }
 }
 

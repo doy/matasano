@@ -31,11 +31,12 @@ impl DHKeyPair {
 
 #[derive(Debug)]
 pub struct SRPServer {
+    pub n: num_bigint::BigUint,
+    pub g: num_bigint::BigUint,
+    pub k: num_bigint::BigUint,
+
     users: std::collections::HashMap<String, SRPUser>,
     sessions: std::collections::HashMap<Vec<u8>, SRPSession>,
-    n: num_bigint::BigUint,
-    g: num_bigint::BigUint,
-    k: num_bigint::BigUint,
 }
 
 impl SRPServer {
@@ -45,11 +46,11 @@ impl SRPServer {
         k: num_bigint::BigUint,
     ) -> SRPServer {
         SRPServer {
-            users: std::collections::HashMap::new(),
-            sessions: std::collections::HashMap::new(),
             n,
             g,
             k,
+            users: std::collections::HashMap::new(),
+            sessions: std::collections::HashMap::new(),
         }
     }
 
@@ -130,58 +131,4 @@ pub struct SRPSession {
     b_pub: num_bigint::BigUint,
     v: num_bigint::BigUint,
     salt: Vec<u8>,
-}
-
-#[derive(Debug)]
-pub struct SRPClient<'a> {
-    server: &'a mut SRPServer,
-}
-
-impl<'a> SRPClient<'a> {
-    pub fn new(server: &'a mut SRPServer) -> SRPClient<'a> {
-        SRPClient { server }
-    }
-
-    pub fn register(&mut self, user: &str, pass: &str) {
-        let mut salt = [0; 16];
-        rand::thread_rng().fill(&mut salt);
-        let input = [&salt[..], pass.as_bytes()].concat();
-        let xh = crate::sha1::sha1(&input);
-        let x = num_bigint::BigUint::from_bytes_le(&xh[..]);
-        let v = self.server.g.modpow(&x, &self.server.n);
-        self.server.register(user, &salt, &v);
-    }
-
-    pub fn key_exchange(
-        &mut self,
-        user: &str,
-        pass: &str,
-    ) -> Option<num_bigint::BigUint> {
-        let n = &self.server.n.clone();
-        let g = &self.server.g.clone();
-        let k = &self.server.k.clone();
-
-        let a_priv = rand::thread_rng().gen_biguint_below(n);
-        let a_pub = g.modpow(&a_priv, n);
-        let (session, salt, b_pub) =
-            self.server.exchange_pubkeys(user, &a_pub);
-
-        let uinput = [a_pub.to_bytes_le(), b_pub.to_bytes_le()].concat();
-        let uh = crate::sha1::sha1(&uinput);
-        let u = num_bigint::BigUint::from_bytes_le(&uh[..]);
-
-        let xinput = [salt.clone(), pass.as_bytes().to_vec()].concat();
-        let xh = crate::sha1::sha1(&xinput);
-        let x = num_bigint::BigUint::from_bytes_le(&xh[..]);
-
-        let s = (b_pub - k * g.modpow(&x, n)).modpow(&(a_priv + u * x), n);
-        let k = crate::sha1::sha1(&s.to_bytes_le());
-        let hmac = crate::sha1::sha1_hmac(&k, &salt);
-
-        if !self.server.verify(session, hmac.to_vec()) {
-            return None
-        }
-
-        Some(s)
-    }
 }
